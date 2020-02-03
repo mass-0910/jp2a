@@ -1,5 +1,6 @@
 /*
  * Copyright 2006-2016 Christian Stigen Larsen
+ * Copyright 2020 Christoph Raitzig
  * Distributed under the GNU General Public License (GPL) v2.
  */
 
@@ -79,9 +80,10 @@ float RED[256], GREEN[256], BLUE[256], GRAY[256];
 const char *fileout = "-"; // stdout
 
 const char* version   = PACKAGE_STRING;
-const char* copyright = "Copyright 2006-2016 Christian Stigen Larsen";
+const char* copyright = "Copyright 2006-2016 Christian Stigen Larsen\n"
+	"and 2020 Christoph Raitzig";
 const char* license   = "Distributed under the GNU General Public License (GPL) v2.";
-const char* url       = "https://github.com/cslarsen/jp2a";
+const char* url       = "https://github.com/Talinx/jp2a";
 
 void print_version() {
 	fprintf(stderr, "%s\n%s\n%s\n", version, copyright, license);

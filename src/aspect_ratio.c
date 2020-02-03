@@ -1,5 +1,6 @@
 /*
  * Copyright 2006-2016 Christian Stigen Larsen
+ * Copyright 2020 Christoph Raitzig
  * Distributed under the GNU General Public License (GPL) v2.
  */
 
