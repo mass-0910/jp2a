@@ -41,7 +41,7 @@ void aspect_ratio(const int jpeg_width, const int jpeg_height) {
 
 		// adjust for too small dimensions
 		if ( height==0 ) {
-			height = 1;
+			height = ( jpeg_height == 1 )? 0 : 1;
 		}
 	}
 }
