@@ -28,6 +28,7 @@
 
 #include "jp2a.h"
 #include "options.h"
+#include "terminal.h"
 
 // Default options
 int verbose = 0;

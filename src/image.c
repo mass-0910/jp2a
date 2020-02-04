@@ -1,5 +1,6 @@
 /*
  * Copyright 2006-2016 Christian Stigen Larsen
+ * Copyright 2020 Christoph Raitzig
  * Distributed under the GNU General Public License (GPL) v2.
  */
 
@@ -26,17 +27,6 @@
 #include "options.h"
 
 #define ROUND(x) (int) ( 0.5f + x )
-
-typedef struct Image_ {
-	int width;
-	int height;
-	float *pixel; // luminosity
-	float *red, *green, *blue;
-	int *yadds;
-	float resize_y;
-	float resize_x;
-	int *lookup_resx;
-} Image;
 
 void print_border(const int width) {
 	#ifndef HAVE_MEMSET

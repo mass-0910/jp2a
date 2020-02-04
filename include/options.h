@@ -1,9 +1,11 @@
 /*
  * Copyright 2006-2016 Christian Stigen Larsen
+ * Copyright 2020 Christoph Raitzig
  * Distributed under the GNU General Public License (GPL) v2.
  */
 
 #ifndef INC_JP2A_OPTIONS_H
+#define INC_JP2A_OPTIONS_H
 
 // see options.c
 extern int verbose;
@@ -36,5 +38,10 @@ extern int term_height;
 #define TERM_FIT_WIDTH 2
 #define TERM_FIT_HEIGHT 3
 #define TERM_FIT_AUTO 4
+
+void print_version();
+void help();
+void precalc_rgb(const float red, const float green, const float blue);
+void parse_options(int argc, char** argv);
 
 #endif
