@@ -1,4 +1,4 @@
-.TH jp2a 1  "September 4, 2006" "version 1.0" "USER COMMANDS"
+.TH jp2a 1  "February 9, 2020" "version 1.0.9" "USER COMMANDS"
 .SH NAME
 jp2a \- convert JPEG images to ASCII
 .SH SYNOPSIS
@@ -29,7 +29,11 @@ Frame output image in a border
 Use the given characters when producing the output ASCII image.  Default is "   ...',;:clodxkO0KXNWM".
 .TP
 .BI \-\-colors
-Use ANSI color for text output and CSS color for HTML output.
+Use truecolor (or ANSI color if truecolor is not supported) for text output and CSS color for HTML output.
+.TP
+. BI \-\-color\-depth= ...
+Use a specific color-depth for terminal output. Valid values are: 4 (for ANSI), 8 (for 256 color
+palette) and 24 (for truecolor or 24-bit color).
 .TP
 .B \-d \-\-debug
 Print debugging information when using libcurl to download images from the net.
