@@ -31,6 +31,7 @@ extern float redweight, greenweight, blueweight;
 extern float RED[256], GREEN[256], BLUE[256], GRAY[256];
 extern const char *fileout;
 extern int usecolors;
+extern int colorDepth;
 extern int termfit;
 extern int term_width;
 extern int term_height;

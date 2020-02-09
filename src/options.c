@@ -59,6 +59,7 @@ int clearscr = 0;
 int term_width = 0;
 int term_height = 0;
 int usecolors = 0;
+int colorDepth = 0;
 
 int termfit =
 #ifdef FEAT_TERMLIB
@@ -112,7 +113,11 @@ void help() {
 "                    Leftmost character corresponds to black pixel, right-\n"
 "                    most to white.  Minimum two characters must be specified.\n"
 "      --clear       Clears screen before drawing each output image.\n"
-"      --colors      Use ANSI colors in output.\n"
+"      --colors      Use true colors or, if true color is not supported, ANSI\n"
+"                    in output.\n"
+"      --color-depth=N   Use a specific color-depth for terminal output. Valid\n"
+"                        values are: 4 (for ANSI), 8 (for 256 color palette)\n"
+"                        and 24 (for truecolor or 24-bit color).\n"
 "  -d, --debug       Print additional debug information.\n"
 "      --fill        When used with --color and/or --html, color each character's\n"
 "                    background color.\n"
@@ -185,30 +190,51 @@ void parse_options(int argc, char** argv) {
 			++files; continue;
 		}
 	
-		IF_OPT ("-")                        { ++files; continue; }
-		IF_OPTS("-h", "--help")             { help(); exit(0); }
-		IF_OPTS("-v", "--verbose")          { verbose = 1; continue; }
-		IF_OPTS("-d", "--debug")            { debug = 1; continue; }
-		IF_OPT ("--clear")                  { clearscr = 1; continue; }
-		IF_OPTS("--color", "--colors")      { usecolors = 1; continue; }
-		IF_OPT ("--fill")                   { colorfill = 1; continue; }
-		IF_OPT ("--grayscale")              { usecolors = 1; convert_grayscale = 1; continue; }
-		IF_OPT ("--html")                   { html = 1; continue; }
-		IF_OPT ("--html-fill")              { colorfill = 1; fputs("warning: --html-fill has changed to --fill\n", stderr); continue; } // TODO: phase out
-		IF_OPT ("--html-no-bold")           { html_bold = 0; continue; }	
-		IF_OPT ("--html-raw")               { html = 1; html_rawoutput = 1; continue; }
-		IF_OPTS("-b", "--border")           { use_border = 1; continue; }
-		IF_OPTS("-i", "--invert")           { invert = !invert; continue; }
-		IF_OPT("--background=dark")         { invert = 1; continue; }
-		IF_OPT("--background=light")        { invert = 0; continue; }
-		IF_OPTS("-x", "--flipx")            { flipx = 1; continue; }
-		IF_OPTS("-y", "--flipy")            { flipy = 1; continue; }
-		IF_OPTS("-V", "--version")          { print_version(); exit(0); }
-		IF_VAR ("--width=%d", &width)       { auto_height += 1; continue; }
-		IF_VAR ("--height=%d", &height)     { auto_width += 1; continue; }
-		IF_VAR ("--red=%f", &redweight)     { continue; }
-		IF_VAR ("--green=%f", &greenweight) { continue; }
-		IF_VAR ("--blue=%f", &blueweight)   { continue; }
+		IF_OPT ("-")                             { ++files; continue; }
+		IF_OPTS("-h", "--help")                  { help(); exit(0); }
+		IF_OPTS("-v", "--verbose")               { verbose = 1; continue; }
+		IF_OPTS("-d", "--debug")                 { debug = 1; continue; }
+		IF_OPT ("--clear")                       { clearscr = 1; continue; }
+		IF_OPTS("--color", "--colors")           { usecolors = 1;
+		if ( debug ) {
+			char *colorterm = getenv("COLORTERM");
+			if ( colorterm==NULL ) {
+				fprintf(stderr, "Environment variable COLORTERM not set.\n");
+			} else {
+				fprintf(stderr, "Environment variable COLORTERM: %s\n", colorterm);
+			}
+		}
+		colorDepth = ( supports_true_color() )? 24 : 4; continue; }
+		IF_VAR ("--color-depth=%d", &colorDepth) {
+			switch(colorDepth) {
+				case 4:
+				case 8:
+				case 24:
+					usecolors = 1;
+					break;
+				default:
+					colorDepth = 0;
+					usecolors = 0;
+			}
+			continue; }
+		IF_OPT ("--fill")                        { colorfill = 1; continue; }
+		IF_OPT ("--grayscale")                   { usecolors = 1; convert_grayscale = 1; continue; }
+		IF_OPT ("--html")                        { html = 1; continue; }
+		IF_OPT ("--html-fill")                   { colorfill = 1; fputs("warning: --html-fill has changed to --fill\n", stderr); continue; } // TODO: phase out
+		IF_OPT ("--html-no-bold")                { html_bold = 0; continue; }	
+		IF_OPT ("--html-raw")                    { html = 1; html_rawoutput = 1; continue; }
+		IF_OPTS("-b", "--border")                { use_border = 1; continue; }
+		IF_OPTS("-i", "--invert")                { invert = !invert; continue; }
+		IF_OPT("--background=dark")              { invert = 1; continue; }
+		IF_OPT("--background=light")             { invert = 0; continue; }
+		IF_OPTS("-x", "--flipx")                 { flipx = 1; continue; }
+		IF_OPTS("-y", "--flipy")                 { flipy = 1; continue; }
+		IF_OPTS("-V", "--version")               { print_version(); exit(0); }
+		IF_VAR ("--width=%d", &width)            { auto_height += 1; continue; }
+		IF_VAR ("--height=%d", &height)          { auto_width += 1; continue; }
+		IF_VAR ("--red=%f", &redweight)          { continue; }
+		IF_VAR ("--green=%f", &greenweight)      { continue; }
+		IF_VAR ("--blue=%f", &blueweight)        { continue; }
 		IF_VAR ("--html-fontsize=%d",
 			&html_fontsize)             { continue; }
 

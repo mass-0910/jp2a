@@ -87,34 +87,74 @@ void print_image_colors(const Image* const i, const int chars, FILE* f) {
 			const float min = 1.0f / 255.0f;
 
 			if ( !html ) {
-				const float t = 0.1f; // threshold
-				const float i = 1.0f - t;
+				if ( usecolors ) // reset colors, the terminal could be colored by default
+					fprintf(f, "\e[0m"); // reset colors
+				if ( colorDepth==4 ) {
+					const float t = 0.1f; // threshold
+					const float i = 1.0f - t;
 
-				int colr = 0;
-				int highl = 0;
+					int colr = 0;
+					int highl = 0;
 
-				// ANSI highlite, only use in grayscale
-			        if ( Y>=0.95f && R<min && G<min && B<min ) highl = 1; // ANSI highlite
+					// ANSI highlite, only use in grayscale
+				        if ( Y>=0.95f && R<min && G<min && B<min ) highl = 1; // ANSI highlite
 
-				if ( !convert_grayscale ) {
-				     if ( R-t>G && R-t>B )            colr = 31; // red
-				else if ( G-t>R && G-t>B )            colr = 32; // green
-				else if ( R-t>B && G-t>B && R+G>i )   colr = 33; // yellow
-				else if ( B-t>R && B-t>G && Y<0.95f ) colr = 34; // blue
-				else if ( R-t>G && B-t>G && R+B>i )   colr = 35; // magenta
-				else if ( G-t>R && B-t>R && B+G>i )   colr = 36; // cyan
-				else if ( R+G+B>=3.0f*Y )             colr = 37; // white
-				} else {
-					if ( Y>=0.7f ) { highl=1; colr = 37; }
-				}
+					if ( !convert_grayscale ) {
+					     if ( R-t>G && R-t>B )            colr = 31; // red
+					else if ( G-t>R && G-t>B )            colr = 32; // green
+					else if ( R-t>B && G-t>B && R+G>i )   colr = 33; // yellow
+					else if ( B-t>R && B-t>G && Y<0.95f ) colr = 34; // blue
+					else if ( R-t>G && B-t>G && R+B>i )   colr = 35; // magenta
+					else if ( G-t>R && B-t>R && B+G>i )   colr = 36; // cyan
+					else if ( R+G+B>=3.0f*Y )             colr = 37; // white
+					} else {
+						if ( Y>=0.7f ) { highl=1; colr = 37; }
+					}
 
-				if ( !colr ) {
-					if ( !highl ) fprintf(f, "%c", ch);
-					else          fprintf(f, "%c[1m%c%c[0m", 27, ch, 27);
-				} else {
-					if ( colorfill ) colr += 10;          // set to ANSI background color
-					fprintf(f, "%c[%dm%c", 27, colr, ch); // ANSI color
-					fprintf(f, "%c[0m", 27);              // ANSI reset
+					if ( !colr ) {
+						if ( !highl ) fprintf(f, "%c", ch);
+						else          fprintf(f, "\e[1m%c\e[0m", ch);
+					} else {
+						if ( colorfill ) colr += 10;          // set to ANSI background color
+						fprintf(f, "\e[%dm%c", colr, ch); // ANSI color
+					}
+				} else
+				if ( colorDepth==8 ) {
+					int type = 38;                        // 38 = foreground; 48 = background
+					if ( colorfill ) type += 10;          // set to background color
+					if ( convert_grayscale || (R<min && G<min && B<min && Y>min) ) {
+						if ( Y < 0.15 ) {
+							if ( colorfill )
+								fprintf(f, "\e[38;5;%dm", 0);
+							fprintf(f, "\e[%d;5;0%dm%c", type, 0, ch);
+						} else
+						if ( Y > 0.965 ) {
+							if ( colorfill )
+								fprintf(f, "\e[38;5;%dm", 244);
+							fprintf(f, "\e[%d;5;%dm%c", type, 231, ch);
+						} else {
+							if ( colorfill )
+								fprintf(f, "\e[38;5;%dm", ROUND(24.0f*Y*0.5f) + 232);
+							fprintf(f, "\e[%d;5;%dm%c", type, ROUND(24.0f*Y) + 232, ch);
+						}
+					} else {
+						if ( colorfill )
+							fprintf(f, "\e[38;5;%dm", 16 + 36 * ROUND(5.0f*Y*R) + 6 * ROUND(5.0f*Y*G) + ROUND(5.0f*Y*B), ch); // foreground color
+						fprintf(f, "\e[%d;5;%dm%c", type, 16 + 36 * ROUND(5.0f*R) + 6 * ROUND(5.0f*G) + ROUND(5.0f*B), ch); // color
+					}
+				} else
+				if ( colorDepth==24 ) {
+					int type = 38;                        // 38 = foreground; 48 = background
+					if ( colorfill ) type += 10;          // set to background color
+					if ( convert_grayscale || (R<min && G<min && B<min && Y>min) ) {
+						if ( colorfill )
+							fprintf(f, "\x1b[38;2;%d;%d;%dm", ROUND(255.0f*Y*0.5f), ROUND(255.0f*Y*0.5f), ROUND(255.0f*Y*0.5f));
+						fprintf(f, "\x1b[%d;2;%d;%d;%dm%c", type, ROUND(255.0f*Y), ROUND(255.0f*Y), ROUND(255.0f*Y), ch);
+					} else {
+						if ( colorfill )
+							fprintf(f, "\x1b[38;2;%d;%d;%dm", ROUND(255.0f*Y*R), ROUND(255.0f*Y*G), ROUND(255.0f*Y*B)); // foreground color
+						fprintf(f, "\x1b[%d;2;%d;%d;%dm%c", type, ROUND(255.0f*R), ROUND(255.0f*G), ROUND(255.0f*B), ch); // color
+					}
 				}
 
 			} else {  // HTML output
@@ -143,6 +183,9 @@ void print_image_colors(const Image* const i, const int chars, FILE* f) {
 				}
 			}
 		}
+
+		if ( usecolors && !html )
+			fprintf(f, "\e[0m");
 
 		if ( use_border )
 			fputc('|', f);

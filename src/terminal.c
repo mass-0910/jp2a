@@ -39,6 +39,8 @@
 #endif
 #endif
 
+#include <string.h>
+
 /*
  * Returns:  1  success
  *           0  terminal type not defined
@@ -108,4 +110,16 @@ int get_termsize(int* _width, int* _height, char** err) {
 	return 0;
 
 #endif // FEAT_TERMLIB
+}
+
+int supports_true_color() {
+	char *colorterm = getenv("COLORTERM");
+	if ( colorterm==NULL ) {
+		return 0;
+	}
+	// some terminals have COLORTERM set, although true color is not supported
+	if ( strcmp(colorterm, "rxvt")==0 ) {
+		return 0;
+	}
+	return 1;
 }

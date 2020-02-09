@@ -7,5 +7,6 @@
 #define INC_JP2A_TERMINAL_H
 
 int get_termsize(int* width_, int* height_, char** error);
+int supports_true_color();
 
 #endif

@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Copyright 2006-2016 Christian Stigen Larsen
+# Copyright 2020 Christoph Raitzig
 #
 # This is a small script to test if jp2a has been correctly built.
 
@@ -39,7 +40,7 @@ function test_failed() {
 
 function test_jp2a() {
 	CMD="${JP} ${2}"
-	printf "test (%2s) %-32s " "$((RESULT_OK+RESULT_FAILED+1))" "(${1})"
+	printf "test (%2s) %-45s " "$((RESULT_OK+RESULT_FAILED+1))" "(${1})"
 
 	if [ ! -e "${3}" ] ; then
 		print_intense "(missing ${3}) "
@@ -116,13 +117,21 @@ test_jp2a "color, html, light" "grind.jpg --color --fill --background=light --wi
 test_jp2a "color, html, grayscale" "dalsnuten-640x480-gray-low.jpg --color --width=78 --html --background=light --fill --html-fontsize=8" dalsnuten-color.html
 test_jp2a "color, html, --grayscale" "grind.jpg --color --width=78 --html --grayscale" grind-2grayscale.html
 test_jp2a "color, html, --grayscale, fill" "grind.jpg --color --width=78 --html --grayscale --fill" grind-2grayscale-fill.html
-test_jp2a "color, fill" "grind.jpg --colors --fill --width=78" grind-fill.txt
-test_jp2a "color, fill, --grayscale" "grind.jpg --colors --fill --grayscale --width=78" grind-2grayscale-fill.txt
+test_jp2a "color, ANSI, fill" "grind.jpg --color-depth=4 --fill --width=78" grind-ANSI-fill.txt
+test_jp2a "color, ANSI, fill, --grayscale" "grind.jpg --color-depth=4 --fill --grayscale --width=78" grind-2grayscale-ANSI-fill.txt
+test_jp2a "color, 256 color palette, fill" "grind.jpg --color-depth=8 --fill --width=78" grind-256-fill.txt
+test_jp2a "color, 256 color palette, fill, --grayscale" "grind.jpg --color-depth=8 --fill --grayscale --width=78" grind-2grayscale-256-fill.txt
+test_jp2a "color, truecolor, fill" "grind.jpg --color-depth=24 --fill --width=78" grind-truecolor-fill.txt
+test_jp2a "color, truecolor, fill, --grayscale" "grind.jpg --color-depth=24 --fill --grayscale --width=78" grind-2grayscale-truecolor-fill.txt
 test_jp2a "color, html, no-bold" "grind.jpg --colors --html --html-no-bold --width=78" grind-nobold.html
 test_jp2a "html-title, html" "--width=10 --html --html-title='just testing' jp2a.jpg" html-title.txt
 test_jp2a "color, html-raw" "--width=10 --color --html-raw jp2a.jpg" html-raw.txt
-test_jp2a "color" "grind.jpg --color --width=60" grind-color.txt
-test_jp2a "color, grayscale" "dalsnuten-640x480-gray-low.jpg --color --width=78" dalsnuten-color.txt
+test_jp2a "color, ANSI" "grind.jpg --color-depth=4 --width=60" grind-color-ANSI.txt
+test_jp2a "color, ANSI, grayscale" "dalsnuten-640x480-gray-low.jpg --color-depth=4 --width=78" dalsnuten-color-ANSI.txt
+test_jp2a "color, 256 color palette" "grind.jpg --color-depth=8 --width=60" grind-color-256.txt
+test_jp2a "color, 256 color palette, grayscale" "dalsnuten-640x480-gray-low.jpg --color-depth=8 --width=78" dalsnuten-color-256.txt
+test_jp2a "color, truecolor" "grind.jpg --color-depth=24 --width=60" grind-color-truecolor.txt
+test_jp2a "color, truecolor, grayscale" "dalsnuten-640x480-gray-low.jpg --color-depth=24 --width=78" dalsnuten-color-truecolor.txt
 test_jp2a "standard input, width" " 2>/dev/null ; cat jp2a.jpg | ${JP} --width=78 -" normal.txt
 test_jp2a "standard input, width, height" " 2>/dev/null ; cat jp2a.jpg | ${JP} - --width=40 --height=40" 40x40.txt
 test_jp2a "big size" "--size=2000x2000 dalsnuten-640x480-gray-low.jpg jp2a.jpg | tr -d '\r' | wc -c | tr -d ' '" dalsnuten-jp2a-2000x2000-md5.txt
