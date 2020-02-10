@@ -139,7 +139,7 @@ void print_image_colors(const Image* const i, const int chars, FILE* f) {
 						}
 					} else {
 						if ( colorfill )
-							fprintf(f, "\e[38;5;%dm", 16 + 36 * ROUND(5.0f*Y*R) + 6 * ROUND(5.0f*Y*G) + ROUND(5.0f*Y*B), ch); // foreground color
+							fprintf(f, "\e[38;5;%dm", 16 + 36 * ROUND(5.0f*Y*R) + 6 * ROUND(5.0f*Y*G) + ROUND(5.0f*Y*B)); // foreground color
 						fprintf(f, "\e[%d;5;%dm%c", type, 16 + 36 * ROUND(5.0f*R) + 6 * ROUND(5.0f*G) + ROUND(5.0f*B), ch); // color
 					}
 				} else
