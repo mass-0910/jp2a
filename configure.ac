@@ -113,6 +113,10 @@ if test "$enable_termlib" = "yes" ; then
 
 fi
 
+# Checks for bash-completion
+PKG_CHECK_VAR(bashcompdir, [bash-completion], [completionsdir], ,
+  bashcompdir="${sysconfdir}/bash_completion.d")
+AC_SUBST(bashcompdir)
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
