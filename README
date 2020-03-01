@@ -1,6 +1,9 @@
 jp2a
 ====
 
+![full-check](https://github.com/Talinx/jp2a/workflows/full-check/badge.svg?branch=master)
+
+
 jp2a is a simple JPEG to ASCII converter.
 
 The source is available at <https://github.com/Talinx/jp2a>. This project
