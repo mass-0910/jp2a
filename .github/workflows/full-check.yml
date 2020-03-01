@@ -1,0 +1,33 @@
+# Version 20200224, by Eriberto Mota
+
+name: full-check
+
+on: [push, pull_request]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: install_dependencies
+      run: sudo apt install libjpeg-dev libcurl4-gnutls-dev libncurses5-dev pkg-config     
+    - name: first_build
+      run: |
+           ./autogen.sh
+           ./configure
+           make
+           sudo make install
+           sudo make uninstall
+           make distclean 
+    - name: second_build
+      run: |
+           ./autogen.sh
+           ./configure
+           make
+           sudo make install
+    - name: run_program
+      run: |
+           TERM=xterm-256color jp2a --colors .github/jp2a.jpg
+           TERM=xterm-256color jp2a --background=light -b -f -x -y --colors .github/jp2a.jpg
