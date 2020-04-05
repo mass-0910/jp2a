@@ -9,7 +9,7 @@
 #include "html.h"
 #include "options.h"
 
-void print_html_start(const int fontsize, FILE *f) {
+void print_html_document_start(const int fontsize, FILE *f) {
 
 	fputs("<!DOCTYPE html>\n"
 		"<html>\n"
@@ -23,12 +23,19 @@ void print_html_start(const int fontsize, FILE *f) {
 	fputs(
 		"  </style>\n"
 		" </head>\n"
-		"<body>\n"
-		"<div class='ascii'><pre>\n", f);
+		"<body>\n", f);
 }
 
-void print_html_end(FILE *f) {
-	fputs("</pre>\n</div>\n</body>\n</html>\n", f);
+void print_html_image_start(FILE *f) {
+	fputs("<div class='ascii'><pre>\n", f);
+}
+
+void print_html_document_end(FILE *f) {
+	fputs("</body>\n</html>\n", f);
+}
+
+void print_html_image_end(FILE *f) {
+	fputs("</pre>\n</div>\n", f);
 }
 
 void print_html_char(FILE *f, const char ch,
@@ -49,7 +56,7 @@ void print_html_newline(FILE *f) {
 	fputs("<br>", f);
 }
 
-void print_xhtml_start(const int fontsize, FILE *f) {
+void print_xhtml_document_start(const int fontsize, FILE *f) {
 	
 	fputs(   "<?xml version='1.0' encoding='ISO-8859-1'?>\n"
 		"<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Strict//EN'"
@@ -64,12 +71,19 @@ void print_xhtml_start(const int fontsize, FILE *f) {
 	fputs(
 		"</style>\n"
 		"</head>\n"
-		"<body>\n"
-		"<div class='ascii'><pre>\n", f);
+		"<body>\n", f);
 }
 
-void print_xhtml_end(FILE *f) {
-	fputs("</pre>\n</div>\n</body>\n</html>\n", f);
+void print_xhtml_image_start(FILE *f) {
+	fputs("<div class='ascii'><pre>\n", f);
+}
+
+void print_xhtml_document_end(FILE *f) {
+	fputs("</body>\n</html>\n", f);
+}
+
+void print_xhtml_image_end(FILE *f) {
+	fputs("</pre>\n</div>\n", f);
 }
 
 void print_xhtml_char(FILE *f, const char ch,

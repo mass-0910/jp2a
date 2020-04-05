@@ -55,6 +55,9 @@ int main(int argc, char** argv) {
 		}
 	}
 
+	if ( html && !html_rawoutput ) print_html_document_start(html_fontsize, fout);
+	else if ( xhtml && !html_rawoutput ) print_xhtml_document_start(html_fontsize, fout);
+
 	for ( n=1; n<argc; ++n ) {
 
 		width = store_width;
@@ -113,6 +116,9 @@ int main(int argc, char** argv) {
 			return 1;
 		}
 	}
+
+	if ( html && !html_rawoutput ) print_html_document_end(fout);
+	else if ( xhtml && !html_rawoutput ) print_xhtml_document_end(fout);
 
 	if ( fout != stdout )
 		fclose(fout);
