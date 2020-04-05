@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.60)
-AC_INIT([jp2a], [1.0.9], [chris-r@posteo.net])
+AC_INIT([jp2a], [1.10.0], [chris-r@posteo.net])
 AM_INIT_AUTOMAKE(dist-bzip2)
 AC_CONFIG_SRCDIR(src/jp2a.c)
 AC_CONFIG_HEADER([config.h])

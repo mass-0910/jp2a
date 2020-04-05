@@ -1,3 +1,6 @@
+CHANGES SINCE 1.10.0
+- support for HTML (Living Standard) additionally to XHTML
+
 CHANGES SINCE 1.0.9
 - support for true color and 256 color palette output for terminals
 - support for bash completion

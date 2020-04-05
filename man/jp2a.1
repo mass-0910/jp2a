@@ -1,4 +1,4 @@
-.TH jp2a 1  "February 9, 2020" "version 1.0.9" "USER COMMANDS"
+.TH jp2a 1  "April 5, 2020" "version 1.1.0" "USER COMMANDS"
 .SH NAME
 jp2a \- convert JPEG images to ASCII
 .SH SYNOPSIS
@@ -79,8 +79,14 @@ Display a short help text
 Converts image to grayscale when using \-\-html or \-\-colors.
 .TP
 .B \-\-html
-Make ASCII output in strict XHTML 1.0, suitable for viewing with web browsers.
-This is useful with big output dimensions, and you want to check the result with a browser with small font.
+Make ASCII output in strict XHTML 1.0. (Will output in HTML for version 2.0.0 and above.)
+.TP
+.B \-\-htmlls
+Make ASCII output in HTML (Living Standard), suitable for viewing with web browsers.
+This is useful with big output dimensions, and if you want to check the result with a browser with small font.
+.TP
+.B \-\-xhtml
+Make ASCII output in strict XHTML 1.0.
 .TP
 .B \-\-html\-fill
 Same as \-\-fill.  You should use that option instead.
@@ -90,7 +96,7 @@ Do not use bold text for HTML output.
 .TP
 .B \-\-html\-raw
 Output only the image in HTML codes, leaving out the rest of the webpage, so you can construct
-your own.
+your own. (Will use <br> for version 2.0.0 and above instead of <br/>.)
 .TP
 .BI \-\-html\-fontsize= N
 Set fontsize when using \-\-html output.  Default is 4.

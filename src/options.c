@@ -48,6 +48,7 @@ int invert = 1;
 int flipx = 0;
 int flipy = 0;
 int html = 0;
+int xhtml = 0;
 int colorfill = 0;
 int convert_grayscale = 0;
 int html_fontsize = 8;
@@ -119,8 +120,8 @@ void help() {
 "                        values are: 4 (for ANSI), 8 (for 256 color palette)\n"
 "                        and 24 (for truecolor or 24-bit color).\n"
 "  -d, --debug       Print additional debug information.\n"
-"      --fill        When used with --color and/or --html, color each character's\n"
-"                    background color.\n"
+"      --fill        When used with --color and/or --htmlls or --xhtml, color\n"
+"                    each character's background.\n"
 "  -x, --flipx       Flip image in X direction.\n"
 "  -y, --flipy       Flip image in Y direction.\n"
 #ifdef FEAT_TERMLIB
@@ -130,15 +131,20 @@ void help() {
 "      --term-width  Use terminal display width.\n"
 "  -z, --term-zoom   Use terminal display dimension for output.\n"
 #endif
-"      --grayscale   Convert image to grayscale when using --html or --colors\n"
+"      --grayscale   Convert image to grayscale when using --htmlls or --xhtml\n"
+"                    or --colors\n"
 "      --green=N.N   Set RGB to grayscale conversion weight, default is 0.5866\n"
 "      --height=N    Set output height, calculate width from aspect ratio.\n"
 "  -h, --help        Print program help.\n"
-"      --html        Produce strict XHTML 1.0 output.\n"
-"      --html-fill   Same as --fill (will be phased out)\n"
+"      --htmlls      Produce HTML (Living Standard) output.\n"
+"      --html        Produce strict XHTML 1.0 output (will produce HTML output\n"
+"                    from version 2.0.0 onward).\n"
+"      --xhtml       Produce strict XHTML 1.0 output.\n" // Obsoletely Fabulous
+"      --html-fill   Same as --fill (will be phased out).\n"
 "      --html-fontsize=N   Set fontsize to N pt, default is 4.\n"
 "      --html-no-bold      Do not use bold characters with HTML output\n"
 "      --html-raw    Output raw HTML codes, i.e. without the <head> section etc.\n"
+"                    (Will use <br> for version 2.0.0 and above.)\n"
 "      --html-title=...  Set HTML output title\n"
 "  -i, --invert      Invert output image.  Use if your display has a dark\n"
 "                    background.\n"
@@ -219,10 +225,12 @@ void parse_options(int argc, char** argv) {
 			continue; }
 		IF_OPT ("--fill")                        { colorfill = 1; continue; }
 		IF_OPT ("--grayscale")                   { usecolors = 1; convert_grayscale = 1; continue; }
-		IF_OPT ("--html")                        { html = 1; continue; }
+		IF_OPT ("--htmlls")                      { html = 1; continue; }
+		IF_OPT ("--html")                        { xhtml = 1; continue; }
+		IF_OPT ("--xhtml")                       { xhtml = 1; continue; }
 		IF_OPT ("--html-fill")                   { colorfill = 1; fputs("warning: --html-fill has changed to --fill\n", stderr); continue; } // TODO: phase out
 		IF_OPT ("--html-no-bold")                { html_bold = 0; continue; }	
-		IF_OPT ("--html-raw")                    { html = 1; html_rawoutput = 1; continue; }
+		IF_OPT ("--html-raw")                    { xhtml = 1; html_rawoutput = 1; continue; }
 		IF_OPTS("-b", "--border")                { use_border = 1; continue; }
 		IF_OPTS("-i", "--invert")                { invert = !invert; continue; }
 		IF_OPT("--background=dark")              { invert = 1; continue; }
@@ -367,6 +375,11 @@ void parse_options(int argc, char** argv) {
 	if ( *fileout == 0 ) {
 		fputs("Empty output filename.\n", stderr);
 		exit(1);
+	}
+
+	if ( html && xhtml ) {
+		fputs("Only HTML or XHTML possible, using HTML.\n", stderr);
+		xhtml = 0;
 	}
 
 	precalc_rgb(redweight, greenweight, blueweight);

@@ -18,6 +18,7 @@ extern int invert;
 extern int flipx;
 extern int flipy;
 extern int html;
+extern int xhtml;
 extern int html_fontsize;
 extern int colorfill;
 extern int convert_grayscale;

@@ -25,6 +25,7 @@
 #include "image.h"
 #include "jp2a.h"
 #include "options.h"
+#include "html.h"
 
 #define ROUND(x) (int) ( 0.5f + x )
 
@@ -86,7 +87,7 @@ void print_image_colors(const Image* const i, const int chars, FILE* f) {
 
 			const float min = 1.0f / 255.0f;
 
-			if ( !html ) {
+			if ( !html && !xhtml ) {
 				if ( usecolors ) // reset colors, the terminal could be colored by default
 					fprintf(f, "\e[0m"); // reset colors
 				if ( colorDepth==4 ) {
@@ -157,7 +158,8 @@ void print_image_colors(const Image* const i, const int chars, FILE* f) {
 					}
 				}
 
-			} else {  // HTML output
+			} else
+			if ( html ) {  // HTML output
 			
 				// either --grayscale is specified (convert_grayscale)
 				// or we can see that the image is inherently a grayscale image	
@@ -181,10 +183,35 @@ void print_image_colors(const Image* const i, const int chars, FILE* f) {
 							ROUND(255.0f*R), ROUND(255.0f*G), ROUND(255.0f*B),
 							255, 255, 255);
 				}
+			} else 
+			if ( xhtml ) {  // XHTML output
+			
+				// either --grayscale is specified (convert_grayscale)
+				// or we can see that the image is inherently a grayscale image	
+				if ( convert_grayscale || (R<min && G<min && B<min && Y>min) ) {
+					// Grayscale image
+					if ( colorfill )
+						print_xhtml_char(f, ch,
+							ROUND(255.0f*Y*0.5f), ROUND(255.0f*Y*0.5f), ROUND(255.0f*Y*0.5f),
+							ROUND(255.0f*Y),      ROUND(255.0f*Y),      ROUND(255.0f*Y));
+					else
+						print_xhtml_char(f, ch,
+							ROUND(255.0f*Y), ROUND(255.0f*Y), ROUND(255.0f*Y),
+							255, 255, 255);
+				} else {
+					if ( colorfill )
+						print_xhtml_char(f, ch,
+							ROUND(255.0f*Y*R), ROUND(255.0f*Y*G), ROUND(255.0f*Y*B),
+							ROUND(255.0f*R),   ROUND(255.0f*G),   ROUND(255.0f*B));
+					else
+						print_xhtml_char(f, ch,
+							ROUND(255.0f*R), ROUND(255.0f*G), ROUND(255.0f*B),
+							255, 255, 255);
+				}
 			}
 		}
 
-		if ( usecolors && !html )
+		if ( usecolors && !html && !xhtml )
 			fprintf(f, "\e[0m");
 
 		if ( use_border )
@@ -192,6 +219,9 @@ void print_image_colors(const Image* const i, const int chars, FILE* f) {
 
 		if ( html )
 			print_html_newline(f);
+		else
+		if ( xhtml )
+			print_xhtml_newline(f);
 		else
 			fputc('\n', f);
 	}
@@ -475,12 +505,14 @@ void decompress(FILE *fp, FILE *fout) {
 	}
 
 	if ( html && !html_rawoutput ) print_html_start(html_fontsize, fout);
+	else if ( xhtml && !html_rawoutput ) print_xhtml_start(html_fontsize, fout);
 	if ( use_border ) print_border(image.width);
 
 	(!usecolors? print_image : print_image_colors) (&image, (int) strlen(ascii_palette) - 1, fout);
 
 	if ( use_border ) print_border(image.width);
 	if ( html && !html_rawoutput ) print_html_end(fout);
+	else if ( xhtml && !html_rawoutput ) print_xhtml_end(fout);
 
 	free_image(&image);
 
