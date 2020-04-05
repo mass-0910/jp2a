@@ -90,8 +90,7 @@ need to specify the path to jpeglib. I usually just do
     make -j
 
 Before installing, you may want to check that jp2a works by running `src/jp2a`
-on some `.jpg` files. The `check` target is currently broken, and won't help
-you. When you're ready to install,
+on some `.jpg` files. You can also use `make check`. When you're ready to install,
 
     make -j install
 
