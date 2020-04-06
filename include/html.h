@@ -24,5 +24,6 @@ void print_xhtml_char(FILE *fout, const char ch,
 void print_xhtml_newline(FILE *fout);
 const char* html_entity(const char ch);
 void print_css(const int fontsize, FILE *f);
+int escape_title();
 
 #endif

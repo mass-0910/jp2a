@@ -5,6 +5,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "html.h"
 #include "options.h"
@@ -124,7 +125,8 @@ void print_css(const int fontsize, FILE *f) {
 		"}\n", f);
 }
 
-const char* html_entity(const char ch) {
+const char* html_entity(const char ch) { // if a html entity is larger than 6
+		// chars, change escape_title accordingly
 	static char s[2];
 	switch ( ch ) {
 	case ' ': return "&nbsp;"; break;
@@ -134,4 +136,34 @@ const char* html_entity(const char ch) {
 	default:
 		s[0]=ch; s[1]=0; return s; break;
 	}
+}
+
+int escape_title() {
+	if ( strlen(html_title_raw)==0 ) {
+		return 1;
+	}
+	html_title = calloc(strlen(html_title_raw)*6 -5, sizeof(char)); // at most
+			// 6 characters are returned by html_entity for each character
+	if ( html_title==NULL ) {
+		return 0;
+	}
+	int j = 0;
+	int sizeNew;
+	char* newChar;
+	for (int i = 0; i < strlen(html_title_raw); i++) {
+		if ( html_title_raw[i]=='&' ) { // otherwise HTML entities could not be
+			// used on purpose
+			html_title[j++] = '&';
+			continue;
+		}
+		const char* newChar = html_entity(html_title_raw[i]);
+		sizeNew = strlen(newChar);
+		for (int k = 0; k < sizeNew; k++) {
+			html_title[j+k] = newChar[k];
+		}
+		j += sizeNew;
+	}
+	if ( reallocarray(html_title, j+1, sizeof(char))==NULL )
+		return 0;
+	return 1;
 }

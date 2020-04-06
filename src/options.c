@@ -29,6 +29,7 @@
 #include "jp2a.h"
 #include "options.h"
 #include "terminal.h"
+#include "html.h"
 
 // Default options
 int verbose = 0;
@@ -53,7 +54,8 @@ int colorfill = 0;
 int convert_grayscale = 0;
 int html_fontsize = 8;
 int html_bold = 1;
-const char* html_title = "jp2a converted image";
+const char* html_title_raw = HTML_DEFAULT_TITLE;
+char* html_title = NULL;
 int html_rawoutput = 0;
 int debug = 0;
 int clearscr = 0;
@@ -263,7 +265,7 @@ void parse_options(int argc, char** argv) {
 		}
 
 		if ( !strncmp(s, "--html-title=", 13) ) {
-			html_title = s + 13;
+			html_title_raw = s + 13;
 			continue;
 		}
 
@@ -380,6 +382,13 @@ void parse_options(int argc, char** argv) {
 	if ( html && xhtml ) {
 		fputs("Only HTML or XHTML possible, using HTML.\n", stderr);
 		xhtml = 0;
+	}
+
+	if ( html || xhtml ) {
+		if ( !escape_title() ) {
+			fprintf(stderr, "Not enough memory.");
+			exit(1);
+		}
 	}
 
 	precalc_rgb(redweight, greenweight, blueweight);

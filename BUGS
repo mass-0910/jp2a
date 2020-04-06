@@ -1,5 +1,4 @@
 Things to do:
-- Add --html-title="..."
 - Add --html-imageonly, which gives JUST the image data, so you can embed the image and format
   the page in your own style.
 

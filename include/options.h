@@ -7,6 +7,8 @@
 #ifndef INC_JP2A_OPTIONS_H
 #define INC_JP2A_OPTIONS_H
 
+#define HTML_DEFAULT_TITLE "jp2a converted image"
+
 // see options.c
 extern int verbose;
 extern int auto_height;
@@ -22,7 +24,8 @@ extern int xhtml;
 extern int html_fontsize;
 extern int colorfill;
 extern int convert_grayscale;
-extern const char *html_title;
+extern const char *html_title_raw;
+extern char *html_title;
 extern int html_rawoutput;
 extern int html_bold;
 extern int debug;

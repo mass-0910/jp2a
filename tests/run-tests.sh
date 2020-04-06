@@ -138,6 +138,7 @@ test_jp2a "color, truecolor, fill, --grayscale" "grind.jpg --color-depth=24 --fi
 test_jp2a "color, html, no-bold" "grind.jpg --colors --htmlls --html-no-bold --width=78" grind-nobold.html
 test_jp2a "color, xhtml, no-bold" "grind.jpg --colors --xhtml --html-no-bold --width=78" grind-nobold-x.html
 test_jp2a "html-title, xhtml" "--width=10 --xhtml --html-title='just testing' jp2a.jpg" html-title.txt
+test_jp2a "html-title, html" "--size=80x50 --htmlls --html-title=\"C&amp;amp;\\\"&'<script>\" jp2a.jpg" html-title-entities.html
 test_jp2a "color, html-raw" "--width=10 --color --html-raw jp2a.jpg" html-raw.txt
 test_jp2a "color, ANSI" "grind.jpg --color-depth=4 --width=60" grind-color-ANSI.txt
 test_jp2a "color, ANSI, grayscale" "dalsnuten-640x480-gray-low.jpg --color-depth=4 --width=78" dalsnuten-color-ANSI.txt

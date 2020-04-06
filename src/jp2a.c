@@ -51,12 +51,14 @@ int main(int argc, char** argv) {
 	if ( strcmp(fileout, "-") ) {
 		if ( (fout = fopen(fileout, "wb")) == NULL ) {
 			fprintf(stderr, "Could not open '%s' for writing.\n", fileout);
+			free(html_title);
 			return 1;
 		}
 	}
 
 	if ( html && !html_rawoutput ) print_html_document_start(html_fontsize, fout);
 	else if ( xhtml && !html_rawoutput ) print_xhtml_document_start(html_fontsize, fout);
+	free(html_title);
 
 	for ( n=1; n<argc; ++n ) {
 
