@@ -142,7 +142,7 @@ int escape_title() {
 	if ( strlen(html_title_raw)==0 ) {
 		return 1;
 	}
-	html_title = calloc(strlen(html_title_raw)*6 -5, sizeof(char)); // at most
+	html_title = calloc(strlen(html_title_raw)*6 +1, sizeof(char)); // at most
 			// 6 characters are returned by html_entity for each character
 	if ( html_title==NULL ) {
 		return 0;
