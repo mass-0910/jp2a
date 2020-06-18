@@ -97,7 +97,7 @@ you. When you're ready to install,
 
 jp2a depends on jpeglib. In case configure fails beacuse jpeglib is not installed,
 it can be built and installed manually. Independent JPEG Group provides a UNIX format
-package in tar.gz format which can be downloaded from http://www.ijg.org/.
+package in tar.gz format which can be downloaded from https://www.ijg.org/.
 
 Extract the archive and follow the instructions inside 'install.txt' to build and
 install it. For a default install, the corresponding `.so` (shared object) files
@@ -141,4 +141,4 @@ You will need to manually type out a `config.h` file. Example:
     FEAT_TERMLIB
 
 You need to add jpeg.lib to the linker. If you want libcurl support, you need
-that as well. It should be available from http://curl.haxx.se
+that as well. It should be available from https://curl.haxx.se
