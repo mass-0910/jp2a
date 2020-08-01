@@ -26,6 +26,8 @@
 #include <term.h>
 #endif
 
+#include <math.h>
+
 #include "jp2a.h"
 #include "options.h"
 #include "terminal.h"
@@ -172,8 +174,12 @@ void help() {
 	fprintf(stderr, "Report bugs to <%s>\n", PACKAGE_BUGREPORT);
 }
 
-void precalc_rgb(const float red, const float green, const float blue) {
+void precalc_rgb(float red, float green, float blue) {
 	int n;
+	float sum = red + green + blue;
+	red /= sum;
+	green /= sum;
+	blue /= sum;
 	for ( n=0; n<256; ++n ) {
 		RED[n]   = ((float) n) * red / 255.0f;
 		GREEN[n] = ((float) n) * green / 255.0f;
@@ -369,8 +375,17 @@ void parse_options(int argc, char** argv) {
 		exit(1);
 	}
 
-	if ( (int)((redweight + greenweight + blueweight)*10000000.0f) != 10000000 ) {
-		fputs("Weights RED + GREEN + BLUE must equal 1.0\n", stderr);
+	if ( redweight < 0 || greenweight < 0 || blueweight < 0 ) {
+		fputs("Weights can't be negative.\n", stderr);
+		exit(1);
+	}
+	if ( !isfinite(redweight) || !isfinite(greenweight) || !isfinite(blueweight) ) {
+		// This can happen if a number can not be represented as floating point, e.g. 3e400.
+		fputs("Did not understand a weight - possibly to large.\n", stderr);
+		exit(1);
+	}
+	if ( (redweight + greenweight + blueweight) == 0.0 ) {
+		fputs("At least one weight must be non-zero.\n", stderr);
 		exit(1);
 	}
 
