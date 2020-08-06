@@ -7,6 +7,12 @@
 #ifndef INC_JP2A_OPTIONS_H
 #define INC_JP2A_OPTIONS_H
 
+
+#define ASCII_PALETTE_SIZE 256
+#define ASCII_PALETTE_DEFAULT "   ...',;:clodxkO0KXNWM";
+#if ! ASCII
+#define MAX_CHAR_LENGTH_BYTES 4
+#endif
 #define HTML_DEFAULT_TITLE "jp2a converted image"
 
 // see options.c
@@ -30,7 +36,12 @@ extern int html_rawoutput;
 extern int html_bold;
 extern int debug;
 extern int clearscr;
+extern int ascii_palette_length;
 extern char ascii_palette[];
+#if ! ASCII
+extern unsigned char ascii_palette_indizes[];
+extern char ascii_palette_lengths[];
+#endif
 extern float redweight, greenweight, blueweight;
 extern float RED[256], GREEN[256], BLUE[256], GRAY[256];
 extern const char *fileout;
@@ -47,6 +58,14 @@ extern int term_height;
 void print_version();
 void help();
 void precalc_rgb(const float red, const float green, const float blue);
+#if ! ASCII
+/*!
+ * Calculate the length of a UTF-8 character.
+ *
+ * \param i Index of the first byte in the palette.
+ */
+int charlen(int i);
+#endif
 void parse_options(int argc, char** argv);
 
 #endif

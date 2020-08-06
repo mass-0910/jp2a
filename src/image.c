@@ -83,7 +83,23 @@ void print_image_colors(const Image* const i, const int chars, FILE* f) {
 			float B = i->blue [x + (flipy? i->height - y - 1 : y ) * i->width];
 
 			const int pos = ROUND((float)chars * (!invert? Y_inv : Y));
+#if ASCII
 			char ch = ascii_palette[pos];
+#define	PRINTF_FORMAT_TYPE "%c"
+#else
+			char ch[MAX_CHAR_LENGTH_BYTES + 1];
+			ch[0] = ascii_palette[ascii_palette_indizes[pos]];
+			switch ( ascii_palette_lengths[pos] ) {
+				case 4:
+					ch[3] = ascii_palette[ascii_palette_indizes[pos] + 3];
+				case 3:
+					ch[2] = ascii_palette[ascii_palette_indizes[pos] + 2];
+				case 2:
+					ch[1] = ascii_palette[ascii_palette_indizes[pos] + 1];
+			}
+			ch[ascii_palette_lengths[pos]] = '\0';
+#define PRINTF_FORMAT_TYPE "%s"
+#endif
 
 			const float min = 1.0f / 255.0f;
 
@@ -113,11 +129,11 @@ void print_image_colors(const Image* const i, const int chars, FILE* f) {
 					}
 
 					if ( !colr ) {
-						if ( !highl ) fprintf(f, "%c", ch);
-						else          fprintf(f, "\e[1m%c\e[0m", ch);
+						if ( !highl ) fprintf(f, PRINTF_FORMAT_TYPE, ch);
+						else          fprintf(f, "\e[1m" PRINTF_FORMAT_TYPE "\e[0m", ch);
 					} else {
 						if ( colorfill ) colr += 10;          // set to ANSI background color
-						fprintf(f, "\e[%dm%c", colr, ch); // ANSI color
+						fprintf(f, "\e[%dm" PRINTF_FORMAT_TYPE, colr, ch); // ANSI color
 					}
 				} else
 				if ( colorDepth==8 ) {
@@ -127,21 +143,21 @@ void print_image_colors(const Image* const i, const int chars, FILE* f) {
 						if ( Y < 0.15 ) {
 							if ( colorfill )
 								fprintf(f, "\e[38;5;%dm", 0);
-							fprintf(f, "\e[%d;5;0%dm%c", type, 0, ch);
+							fprintf(f, "\e[%d;5;0%dm" PRINTF_FORMAT_TYPE, type, 0, ch);
 						} else
 						if ( Y > 0.965 ) {
 							if ( colorfill )
 								fprintf(f, "\e[38;5;%dm", 244);
-							fprintf(f, "\e[%d;5;%dm%c", type, 231, ch);
+							fprintf(f, "\e[%d;5;%dm" PRINTF_FORMAT_TYPE, type, 231, ch);
 						} else {
 							if ( colorfill )
 								fprintf(f, "\e[38;5;%dm", ROUND(24.0f*Y*0.5f) + 232);
-							fprintf(f, "\e[%d;5;%dm%c", type, ROUND(24.0f*Y) + 232, ch);
+							fprintf(f, "\e[%d;5;%dm" PRINTF_FORMAT_TYPE, type, ROUND(24.0f*Y) + 232, ch);
 						}
 					} else {
 						if ( colorfill )
 							fprintf(f, "\e[38;5;%dm", 16 + 36 * ROUND(5.0f*Y*R) + 6 * ROUND(5.0f*Y*G) + ROUND(5.0f*Y*B)); // foreground color
-						fprintf(f, "\e[%d;5;%dm%c", type, 16 + 36 * ROUND(5.0f*R) + 6 * ROUND(5.0f*G) + ROUND(5.0f*B), ch); // color
+						fprintf(f, "\e[%d;5;%dm" PRINTF_FORMAT_TYPE, type, 16 + 36 * ROUND(5.0f*R) + 6 * ROUND(5.0f*G) + ROUND(5.0f*B), ch); // color
 					}
 				} else
 				if ( colorDepth==24 ) {
@@ -150,11 +166,11 @@ void print_image_colors(const Image* const i, const int chars, FILE* f) {
 					if ( convert_grayscale || (R<min && G<min && B<min && Y>min) ) {
 						if ( colorfill )
 							fprintf(f, "\x1b[38;2;%d;%d;%dm", ROUND(255.0f*Y*0.5f), ROUND(255.0f*Y*0.5f), ROUND(255.0f*Y*0.5f));
-						fprintf(f, "\x1b[%d;2;%d;%d;%dm%c", type, ROUND(255.0f*Y), ROUND(255.0f*Y), ROUND(255.0f*Y), ch);
+						fprintf(f, "\x1b[%d;2;%d;%d;%dm" PRINTF_FORMAT_TYPE, type, ROUND(255.0f*Y), ROUND(255.0f*Y), ROUND(255.0f*Y), ch);
 					} else {
 						if ( colorfill )
 							fprintf(f, "\x1b[38;2;%d;%d;%dm", ROUND(255.0f*Y*R), ROUND(255.0f*Y*G), ROUND(255.0f*Y*B)); // foreground color
-						fprintf(f, "\x1b[%d;2;%d;%d;%dm%c", type, ROUND(255.0f*R), ROUND(255.0f*G), ROUND(255.0f*B), ch); // color
+						fprintf(f, "\x1b[%d;2;%d;%d;%dm" PRINTF_FORMAT_TYPE, type, ROUND(255.0f*R), ROUND(255.0f*G), ROUND(255.0f*B), ch); // color
 					}
 				}
 
@@ -230,25 +246,64 @@ void print_image_colors(const Image* const i, const int chars, FILE* f) {
 void print_image(const Image* const i, const int chars, FILE *f) {
 	int x, y;
 
+#if ASCII
 	#ifdef WIN32
 	char *line = (char*) malloc(i->width + 1);
 	#else
 	char line[i->width + 1];
 	#endif
+#else
+	#ifdef WIN32
+	char *line = (char*) malloc(i->width * 4 + 1);
+	#else
+	char line[i->width * 4 + 1];
+	#endif
+	int curLinePos;
+#endif
 
 	line[i->width] = 0;
 
 	for ( y=0; y < i->height; ++y ) {
 
+#if ! ASCII
+		curLinePos = flipx? i->width * MAX_CHAR_LENGTH_BYTES : 0;
+#endif
 		for ( x=0; x < i->width; ++x ) {
 
 			const float lum = i->pixel[x + (flipy? i->height - y - 1 : y) * i->width];
 			const int pos = ROUND((float)chars * lum);
 
+#if ASCII
 			line[flipx? i->width - x - 1 : x] = ascii_palette[invert? pos : chars - pos];
+#else
+			int i = invert? pos : chars - pos;
+			int paletteI = ascii_palette_indizes[i];
+			if ( flipx )
+				curLinePos -= ascii_palette_lengths[i];
+			line[curLinePos++] = ascii_palette[paletteI];
+			// Add as many bytes as the char's length
+			switch ( ascii_palette_lengths[i] ) {
+				case 4:
+					line[curLinePos++] = ascii_palette[++paletteI];
+				case 3:
+					line[curLinePos++] = ascii_palette[++paletteI];
+				case 2:
+					line[curLinePos++] = ascii_palette[++paletteI];
+			}
+			if ( flipx )
+				curLinePos -= ascii_palette_lengths[i];
+#endif
 		}
-
+#if ASCII
 		fprintf(f, !use_border? "%s\n" : "|%s|\n", line);
+#else
+		if ( !flipx ) {
+			line[curLinePos] = '\0';
+			fprintf(f, !use_border? "%s\n" : "|%s|\n", line);
+		} else {
+			fprintf(f, !use_border? "%s\n" : "|%s|\n", line + curLinePos);
+		}
+#endif
 	}
 
 	#ifdef WIN32
@@ -326,7 +381,7 @@ void print_info(const struct jpeg_decompress_struct* jpg) {
 	fprintf(stderr, "Source color components: %d\n", jpg->output_components);
 	fprintf(stderr, "Output width: %d\n", width);
 	fprintf(stderr, "Output height: %d\n", height);
-	fprintf(stderr, "Output palette (%d chars): '%s'\n", (int)strlen(ascii_palette), ascii_palette);
+	fprintf(stderr, "Output palette (%d chars): '%s'\n", ascii_palette_length, ascii_palette);
 }
 
 void process_scanline(const struct jpeg_decompress_struct *jpg, const JSAMPLE* scanline, Image* i) {
@@ -508,7 +563,7 @@ void decompress(FILE *fp, FILE *fout) {
 	else if ( xhtml && !html_rawoutput ) print_xhtml_image_start(fout);
 	if ( use_border ) print_border(image.width);
 
-	(!usecolors? print_image : print_image_colors) (&image, (int) strlen(ascii_palette) - 1, fout);
+	(!usecolors? print_image : print_image_colors) (&image, ascii_palette_length - 1, fout);
 
 	if ( use_border ) print_border(image.width);
 	if ( html && !html_rawoutput ) print_html_image_end(fout);

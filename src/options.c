@@ -73,8 +73,14 @@ int termfit =
  0;
 #endif
 
-#define ASCII_PALETTE_SIZE 256
-char ascii_palette[ASCII_PALETTE_SIZE + 1] = "   ...',;:clodxkO0KXNWM";
+int ascii_palette_length = 23;
+#if ASCII
+char ascii_palette[ASCII_PALETTE_SIZE + 1] = ASCII_PALETTE_DEFAULT;
+#else
+char ascii_palette[ASCII_PALETTE_SIZE * MAX_CHAR_LENGTH_BYTES + 1] = ASCII_PALETTE_DEFAULT;
+unsigned char ascii_palette_indizes[ASCII_PALETTE_SIZE] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22};
+char ascii_palette_lengths[ASCII_PALETTE_SIZE] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+#endif
 
 // Default weights, must add up to 1.0
 float redweight = 0.2989f;
@@ -188,6 +194,19 @@ void precalc_rgb(float red, float green, float blue) {
 	}
 }
 
+int charlen(int i) {
+	if ((ascii_palette[i] & 0b10000000) == 0b00000000) {
+		return 1;
+	}
+	if ((ascii_palette[i] & 0b11100000) == 0b11000000) {
+		return 2;
+	}
+	if ((ascii_palette[i] & 0b11110000) == 0b11100000) {
+		return 3;
+	}
+	return 4;
+}
+
 void parse_options(int argc, char** argv) {
 	// make code more readable
 	#define IF_OPTS(sopt, lopt)     if ( !strcmp(s, sopt) || !strcmp(s, lopt) )
@@ -277,15 +296,43 @@ void parse_options(int argc, char** argv) {
 
 		if ( !strncmp(s, "--chars=", 8) ) {
 
-			if ( strlen(s-8) > ASCII_PALETTE_SIZE ) {
+#if ASCII
+			if ( strlen(s)-8 > ASCII_PALETTE_SIZE ) {
 				fprintf(stderr,
 					"Too many ascii characters specified (max %d)\n",
 					ASCII_PALETTE_SIZE);
 				exit(1);
 			}
+#else
+			if ( strlen(s)-8 > ASCII_PALETTE_SIZE * MAX_CHAR_LENGTH_BYTES ) {
+				fprintf(stderr,
+					"Too many characters specified (max %d)\n",
+					ASCII_PALETTE_SIZE);
+				exit(1);
+			}
+#endif
 	
 			// don't use sscanf, we need to read spaces as well
 			strcpy(ascii_palette, s+8);
+#if ASCII
+			ascii_palette_length = strlen(ascii_palette);
+#else
+			int i = 0;
+			int count = 0;
+			while ( ascii_palette[i] != '\0' ) {
+				ascii_palette_indizes[count] = i;
+				ascii_palette_lengths[count] = charlen(i);
+				i += charlen(i);
+				count++;
+			}
+			if ( count > ASCII_PALETTE_SIZE ) {
+				fprintf(stderr,
+					"Too many characters specified (max %d)\n",
+					ASCII_PALETTE_SIZE);
+				exit(1);
+			}
+			ascii_palette_length = count;
+#endif
 			continue;
 		}
 

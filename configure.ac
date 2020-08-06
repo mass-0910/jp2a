@@ -48,6 +48,11 @@ AC_ARG_ENABLE([termlib],
 	[enable_termlib=$enableval],
 	[enable_termlib="yes"])
 
+AC_ARG_ENABLE([pure-ascii],
+	AC_HELP_STRING([--enable-pure-ascii], [only support ASCII and not UTF-8 (default: no)]),
+	[pure_ascii=$enableval],
+	[pure_ascii="no"])
+
 AC_MSG_CHECKING([enable-curl])
 AC_MSG_RESULT([$enable_curl])
 
@@ -74,6 +79,10 @@ if test "x$enable_curl" = "xyes" ; then
 		  AC_MSG_WARN([I need a working libcurl (use --with-curl-config=PATH); download-support will be disabled])
 		  enable_curl="no"
 		])
+fi
+
+if test "x$pure_ascii" = "xyes" ; then
+	AC_DEFINE([ASCII], [1], [only support ASCII, not UTF-8])
 fi
 
 # Checks for header files.

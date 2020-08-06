@@ -4,6 +4,10 @@
  * Distributed under the GNU General Public License (GPL) v2.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,9 +43,15 @@ void print_html_image_end(FILE *f) {
 	fputs("</pre>\n</div>\n", f);
 }
 
+#if ASCII
 void print_html_char(FILE *f, const char ch,
 	const int r_fg, const int g_fg, const int b_fg,
 	const int r_bg, const int g_bg, const int b_bg)
+#else
+void print_html_char(FILE *f, const char* ch,
+	const int r_fg, const int g_fg, const int b_fg,
+	const int r_bg, const int g_bg, const int b_bg)
+#endif
 {
 	if ( colorfill ) {
 		fprintf(f, "<span style='color:#%02x%02x%02x; background-color:#%02x%02x%02x;'>%s</span>",
@@ -87,9 +97,15 @@ void print_xhtml_image_end(FILE *f) {
 	fputs("</pre>\n</div>\n", f);
 }
 
+#if ASCII
 void print_xhtml_char(FILE *f, const char ch,
 	const int r_fg, const int g_fg, const int b_fg,
 	const int r_bg, const int g_bg, const int b_bg)
+#else
+void print_xhtml_char(FILE *f, const char* ch,
+	const int r_fg, const int g_fg, const int b_fg,
+	const int r_bg, const int g_bg, const int b_bg)
+#endif
 {
 	if ( colorfill ) {
 		fprintf(f, "<span style='color:#%02x%02x%02x; background-color:#%02x%02x%02x;'>%s</span>",
@@ -125,16 +141,25 @@ void print_css(const int fontsize, FILE *f) {
 		"}\n", f);
 }
 
+#if ASCII
 const char* html_entity(const char ch) { // if a html entity is larger than 6
 		// chars, change escape_title accordingly
 	static char s[2];
 	switch ( ch ) {
+#else
+const char* html_entity(const char* ch) {
+	switch ( ch[0] ) {
+#endif
 	case ' ': return "&nbsp;"; break;
 	case '<': return "&lt;"; break;
 	case '>': return "&gt;"; break;
 	case '&': return "&amp;"; break;
 	default:
+#if ASCII
 		s[0]=ch; s[1]=0; return s; break;
+#else
+		return ch;
+#endif
 	}
 }
 
@@ -156,7 +181,14 @@ int escape_title() {
 			html_title[j++] = '&';
 			continue;
 		}
+#if ASCII
 		const char* newChar = html_entity(html_title_raw[i]);
+#else
+		char tempString[2];
+		tempString[0] = html_title_raw[i];
+		tempString[1] = '\0';
+		const char* newChar = html_entity(tempString);
+#endif
 		sizeNew = strlen(newChar);
 		for (int k = 0; k < sizeNew; k++) {
 			html_title[j+k] = newChar[k];
