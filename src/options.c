@@ -195,16 +195,32 @@ void precalc_rgb(float red, float green, float blue) {
 }
 
 int charlen(int i) {
-	if ((ascii_palette[i] & 0b10000000) == 0b00000000) {
+	int output = -1;
+	if ( (ascii_palette[i] & 0b10000000) == 0b00000000 ) {
 		return 1;
 	}
-	if ((ascii_palette[i] & 0b11100000) == 0b11000000) {
-		return 2;
+	if ( (ascii_palette[i] & 0b11100000) == 0b11000000 ) {
+		output = 2;
 	}
-	if ((ascii_palette[i] & 0b11110000) == 0b11100000) {
-		return 3;
+	if ( (ascii_palette[i] & 0b11110000) == 0b11100000 ) {
+		output = 3;
 	}
-	return 4;
+	if ( (ascii_palette[i] & 0b11111000) == 0b11110000 ) {
+		output = 4;
+	}
+	if ( output != -1 ) {
+		// check whether the char is a valid UTF-8 char
+		if ( (i + output) > strlen(ascii_palette) ) {
+			output = -1;
+		} else {
+			for ( int j = i + 1; j < (i + output); j++ ) {
+				if ( (ascii_palette[j] & 0b11000000) != 0b10000000 ) {
+					output = -1;
+				}
+			}
+		}
+	}
+	return output;
 }
 
 void parse_options(int argc, char** argv) {
@@ -319,10 +335,17 @@ void parse_options(int argc, char** argv) {
 #else
 			int i = 0;
 			int count = 0;
+			int curCharlen;
 			while ( ascii_palette[i] != '\0' ) {
 				ascii_palette_indizes[count] = i;
 				ascii_palette_lengths[count] = charlen(i);
-				i += charlen(i);
+				curCharlen = charlen(i);
+				if ( curCharlen == -1 ) {
+					fprintf(stderr,
+						"Invalid UTF-8 character encountered.\n");
+					exit(1);
+				}
+				i += curCharlen;
 				count++;
 			}
 			if ( count > ASCII_PALETTE_SIZE ) {
@@ -411,7 +434,7 @@ void parse_options(int argc, char** argv) {
 	if ( auto_width==2 && auto_height==1 )
 		auto_width = auto_height = 0;
 
-	if ( strlen(ascii_palette) < 2 ) {
+	if ( ascii_palette_length < 2 ) {
 		fputs("You must specify at least two characters in --chars.\n",
 			stderr);
 		exit(1);

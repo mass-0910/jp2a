@@ -63,6 +63,7 @@ void precalc_rgb(const float red, const float green, const float blue);
  * Calculate the length of a UTF-8 character.
  *
  * \param i Index of the first byte in the palette.
+ * \return The length of the character or -1 if it is invalid.
  */
 int charlen(int i);
 #endif
