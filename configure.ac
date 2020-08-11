@@ -49,7 +49,7 @@ AC_ARG_ENABLE([termlib],
 	[enable_termlib="yes"])
 
 AC_ARG_ENABLE([pure-ascii],
-	AC_HELP_STRING([--enable-pure-ascii], [only support ASCII and not UTF-8 (default: no)]),
+	AC_HELP_STRING([--enable-pure-ascii], [only support ASCII (and not UTF-8 or other character encodings) and ignore the locale (default: no)]),
 	[pure_ascii=$enableval],
 	[pure_ascii="no"])
 

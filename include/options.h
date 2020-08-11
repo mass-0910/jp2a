@@ -10,9 +10,6 @@
 
 #define ASCII_PALETTE_SIZE 256
 #define ASCII_PALETTE_DEFAULT "   ...',;:clodxkO0KXNWM";
-#if ! ASCII
-#define MAX_CHAR_LENGTH_BYTES 4
-#endif
 #define HTML_DEFAULT_TITLE "jp2a converted image"
 
 // see options.c
@@ -58,15 +55,6 @@ extern int term_height;
 void print_version();
 void help();
 void precalc_rgb(const float red, const float green, const float blue);
-#if ! ASCII
-/*!
- * Calculate the length of a UTF-8 character.
- *
- * \param i Index of the first byte in the palette.
- * \return The length of the character or -1 if it is invalid.
- */
-int charlen(int i);
-#endif
 void parse_options(int argc, char** argv);
 
 #endif

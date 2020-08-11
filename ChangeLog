@@ -1,6 +1,6 @@
 CHANGES SINCE 1.10.0
 - support for HTML (Living Standard) additionally to XHTML
-- (optional) support for UTF-8
+- (optional) support for other character encodings than ASCII
 
 CHANGES SINCE 1.0.9
 - support for true color and 256 color palette output for terminals

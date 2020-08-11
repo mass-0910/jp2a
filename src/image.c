@@ -14,6 +14,7 @@
 #endif
 
 #include <stdio.h>
+#include <limits.h>
 
 #ifdef HAVE_STRING_H
 #include <string.h>
@@ -87,15 +88,10 @@ void print_image_colors(const Image* const i, const int chars, FILE* f) {
 			char ch = ascii_palette[pos];
 #define	PRINTF_FORMAT_TYPE "%c"
 #else
-			char ch[MAX_CHAR_LENGTH_BYTES + 1];
+			char ch[MB_LEN_MAX + 1];
 			ch[0] = ascii_palette[ascii_palette_indizes[pos]];
-			switch ( ascii_palette_lengths[pos] ) {
-				case 4:
-					ch[3] = ascii_palette[ascii_palette_indizes[pos] + 3];
-				case 3:
-					ch[2] = ascii_palette[ascii_palette_indizes[pos] + 2];
-				case 2:
-					ch[1] = ascii_palette[ascii_palette_indizes[pos] + 1];
+			for ( size_t j = 1; j < ascii_palette_lengths[pos]; j++ ) {
+				ch[j] = ascii_palette[ascii_palette_indizes[pos] + j];
 			}
 			ch[ascii_palette_lengths[pos]] = '\0';
 #define PRINTF_FORMAT_TYPE "%s"
@@ -252,21 +248,21 @@ void print_image(const Image* const i, const int chars, FILE *f) {
 	#else
 	char line[i->width + 1];
 	#endif
+	line[i->width] = 0;
 #else
 	#ifdef WIN32
-	char *line = (char*) malloc(i->width * 4 + 1);
+	char *line = (char*) malloc(i->width * MB_LEN_MAX + 1);
 	#else
-	char line[i->width * 4 + 1];
+	char line[i->width * MB_LEN_MAX + 1];
 	#endif
 	int curLinePos;
+	line[i->width * MB_LEN_MAX] = 0;
 #endif
-
-	line[i->width] = 0;
 
 	for ( y=0; y < i->height; ++y ) {
 
 #if ! ASCII
-		curLinePos = flipx? i->width * MAX_CHAR_LENGTH_BYTES : 0;
+		curLinePos = flipx? i->width * MB_LEN_MAX : 0;
 #endif
 		for ( x=0; x < i->width; ++x ) {
 
@@ -282,13 +278,8 @@ void print_image(const Image* const i, const int chars, FILE *f) {
 				curLinePos -= ascii_palette_lengths[i];
 			line[curLinePos++] = ascii_palette[paletteI];
 			// Add as many bytes as the char's length
-			switch ( ascii_palette_lengths[i] ) {
-				case 4:
-					line[curLinePos++] = ascii_palette[++paletteI];
-				case 3:
-					line[curLinePos++] = ascii_palette[++paletteI];
-				case 2:
-					line[curLinePos++] = ascii_palette[++paletteI];
+			for ( size_t j = 1; j < ascii_palette_lengths[i]; j++ ) {
+				line[curLinePos++] = ascii_palette[++paletteI];
 			}
 			if ( flipx )
 				curLinePos -= ascii_palette_lengths[i];

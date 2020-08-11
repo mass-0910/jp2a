@@ -13,6 +13,7 @@
 #endif
 
 #include <stdio.h>
+#include <locale.h>
 
 #ifdef HAVE_STRING_H
 #include <string.h>
@@ -40,6 +41,10 @@ int main(int argc, char** argv) {
 #endif
 	FILE *fp;
 	int n;
+
+#if ! ASCII
+	setlocale(LC_ALL, "");
+#endif
 
 	parse_options(argc, argv);
 

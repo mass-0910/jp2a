@@ -9,6 +9,10 @@
 #endif
 
 #include <stdio.h>
+#include <math.h>
+#include <wchar.h>
+#include <limits.h>
+#include <errno.h>
 
 #ifdef HAVE_STRING_H
 #include <string.h>
@@ -25,8 +29,6 @@
 #ifdef HAVE_TERM_H
 #include <term.h>
 #endif
-
-#include <math.h>
 
 #include "jp2a.h"
 #include "options.h"
@@ -77,7 +79,7 @@ int ascii_palette_length = 23;
 #if ASCII
 char ascii_palette[ASCII_PALETTE_SIZE + 1] = ASCII_PALETTE_DEFAULT;
 #else
-char ascii_palette[ASCII_PALETTE_SIZE * MAX_CHAR_LENGTH_BYTES + 1] = ASCII_PALETTE_DEFAULT;
+char ascii_palette[ASCII_PALETTE_SIZE * MB_LEN_MAX + 1] = ASCII_PALETTE_DEFAULT;
 unsigned char ascii_palette_indizes[ASCII_PALETTE_SIZE] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22};
 char ascii_palette_lengths[ASCII_PALETTE_SIZE] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 #endif
@@ -194,35 +196,6 @@ void precalc_rgb(float red, float green, float blue) {
 	}
 }
 
-int charlen(int i) {
-	int output = -1;
-	if ( (ascii_palette[i] & 0b10000000) == 0b00000000 ) {
-		return 1;
-	}
-	if ( (ascii_palette[i] & 0b11100000) == 0b11000000 ) {
-		output = 2;
-	}
-	if ( (ascii_palette[i] & 0b11110000) == 0b11100000 ) {
-		output = 3;
-	}
-	if ( (ascii_palette[i] & 0b11111000) == 0b11110000 ) {
-		output = 4;
-	}
-	if ( output != -1 ) {
-		// check whether the char is a valid UTF-8 char
-		if ( (i + output) > strlen(ascii_palette) ) {
-			output = -1;
-		} else {
-			for ( int j = i + 1; j < (i + output); j++ ) {
-				if ( (ascii_palette[j] & 0b11000000) != 0b10000000 ) {
-					output = -1;
-				}
-			}
-		}
-	}
-	return output;
-}
-
 void parse_options(int argc, char** argv) {
 	// make code more readable
 	#define IF_OPTS(sopt, lopt)     if ( !strcmp(s, sopt) || !strcmp(s, lopt) )
@@ -320,7 +293,7 @@ void parse_options(int argc, char** argv) {
 				exit(1);
 			}
 #else
-			if ( strlen(s)-8 > ASCII_PALETTE_SIZE * MAX_CHAR_LENGTH_BYTES ) {
+			if ( strlen(s)-8 > ASCII_PALETTE_SIZE * MB_LEN_MAX ) {
 				fprintf(stderr,
 					"Too many characters specified (max %d)\n",
 					ASCII_PALETTE_SIZE);
@@ -335,14 +308,17 @@ void parse_options(int argc, char** argv) {
 #else
 			int i = 0;
 			int count = 0;
-			int curCharlen;
+			size_t curCharlen;
 			while ( ascii_palette[i] != '\0' ) {
 				ascii_palette_indizes[count] = i;
-				ascii_palette_lengths[count] = charlen(i);
-				curCharlen = charlen(i);
+				curCharlen = mbrlen(ascii_palette + i, MB_LEN_MAX, NULL);
+				ascii_palette_lengths[count] = curCharlen;
 				if ( curCharlen == -1 ) {
-					fprintf(stderr,
-						"Invalid UTF-8 character encountered.\n");
+					fprintf(stderr, "Error with custom chars: %s\n", strerror(errno));
+					exit(1);
+				} else
+				if ( curCharlen == -2 ) {
+					fprintf(stderr, "Error while parsing custom chars.");
 					exit(1);
 				}
 				i += curCharlen;
