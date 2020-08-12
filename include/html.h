@@ -6,9 +6,7 @@
 #ifndef INC_JP2A_HTML_H
 #define INC_JP2A_HTML_H
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 void print_html_document_start(const int fontsize, FILE *fout);
 void print_html_image_start(FILE *f);

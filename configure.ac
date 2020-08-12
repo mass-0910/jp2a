@@ -1,11 +1,11 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.60)
-AC_INIT([jp2a], [1.10.0], [chris-r@posteo.net])
+AC_PREREQ([2.69])
+AC_INIT([jp2a],[1.10.0],[chris-r@posteo.net], [jp2a], [https://github.com/Talinx/jp2a])
 AM_INIT_AUTOMAKE(dist-bzip2)
 AC_CONFIG_SRCDIR(src/jp2a.c)
-AC_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile src/Makefile])
 
 # Checks for programs.
@@ -13,19 +13,19 @@ AC_PROG_CC
 
 # Checks for libraries.
 AC_ARG_WITH([jpeg-include],
-	AC_HELP_STRING([--with-jpeg-include=PATH], [specify path to directory containing jpeglib.h -- http://www.ijg.org/]),
+	AS_HELP_STRING([--with-jpeg-include=PATH],[specify path to directory containing jpeglib.h -- http://www.ijg.org/]),
 	[CPPFLAGS="$CPPFLAGS -I$withval"])
 
 AC_ARG_WITH([jpeg-lib],
-	AC_HELP_STRING([--with-jpeg-lib=PATH], [specify path to directory containing jpeglib lib file -- http://www.ijg.org/]),
+	AS_HELP_STRING([--with-jpeg-lib=PATH],[specify path to directory containing jpeglib lib file -- http://www.ijg.org/]),
 	[LDFLAGS="$LDFLAGS -L$withval"])
 
 AC_ARG_WITH([jpeg-prefix],
-	AC_HELP_STRING([--with-jpeg-prefix=PATH], [this is the same as --with-jpeg-include=PATH/include and --with-jpeg-lib=PATH/lib]),
+	AS_HELP_STRING([--with-jpeg-prefix=PATH],[this is the same as --with-jpeg-include=PATH/include and --with-jpeg-lib=PATH/lib]),
 	[CPPFLAGS="$CPPFLAGS -I$withval/include" LDFLAGS="$LDFLAGS -L$withval/lib"])
 
 AC_ARG_WITH([curl-config],
-	AC_HELP_STRING([--with-curl-config=PATH], [specify path to curl-config]),
+	AS_HELP_STRING([--with-curl-config=PATH],[specify path to curl-config]),
 	[curl_config_path="$withval" enable_curl="yes"],
 	[curl_config_path="$PATH"])
 
@@ -39,17 +39,17 @@ On many systems, this is installed in /usr/local/lib/ so you can try --with-jpeg
 fi
 
 AC_ARG_ENABLE([curl],
-	AC_HELP_STRING([--enable-curl], [enable to be to use libcurl (http://curl.haxx.se) to download images from the net (default: yes)]),
+	AS_HELP_STRING([--enable-curl],[enable to be to use libcurl (http://curl.haxx.se) to download images from the net (default: yes)]),
 	[enable_curl=$enableval],
 	[enable_curl="yes"])
 
 AC_ARG_ENABLE([termlib],
-	AC_HELP_STRING([--enable-termlib], [enable to use term/curses for detecting terminal dimensions (default: yes)]),
+	AS_HELP_STRING([--enable-termlib],[enable to use term/curses for detecting terminal dimensions (default: yes)]),
 	[enable_termlib=$enableval],
 	[enable_termlib="yes"])
 
 AC_ARG_ENABLE([pure-ascii],
-	AC_HELP_STRING([--enable-pure-ascii], [only support ASCII (and not UTF-8 or other character encodings) and ignore the locale (default: no)]),
+	AS_HELP_STRING([--enable-pure-ascii],[only support ASCII (and not UTF-8 or other character encodings) and ignore the locale (default: no)]),
 	[pure_ascii=$enableval],
 	[pure_ascii="no"])
 
@@ -82,7 +82,7 @@ if test "x$enable_curl" = "xyes" ; then
 fi
 
 if test "x$pure_ascii" = "xyes" ; then
-	AC_DEFINE([ASCII], [1], [only support ASCII, not UTF-8])
+	AC_DEFINE([ASCII], [1], [only support ASCII, not UTF-8 or other encodings])
 fi
 
 # Checks for header files.
@@ -98,7 +98,7 @@ if test "x$enable_curl" = "xyes" ; then
 		[ AC_MSG_WARN([required header file curl/curl.h not found, libcurl will be disabled (see --help)]) ])
 fi
 
-AC_CHECK_HEADERS([fcntl.h curses.h term.h ncurses/term.h math.h])
+AC_CHECK_HEADERS([fcntl.h curses.h term.h ncurses/term.h math.h limits.h locale.h stdlib.h string.h unistd.h wchar.h])
 
 if test "$enable_termlib" = "yes" ; then
 
@@ -132,12 +132,13 @@ AC_C_CONST
 AC_C_INLINE
 AC_C_RESTRICT
 AC_TYPE_SIZE_T
+AC_CHECK_HEADER_STDBOOL
 
 # Checks for library functions.
-AC_CHECK_FUNCS([memset])
-AC_CHECK_FUNCS([atexit])
 AC_FUNC_FORK
 AC_TYPE_PID_T
+AC_FUNC_MALLOC
+AC_CHECK_FUNCS([memset atexit mbrlen memset setlocale strerror])
 
 AC_HEADER_ASSERT
 

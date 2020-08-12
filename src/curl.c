@@ -6,9 +6,7 @@
 
 #include "curl.h"
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #ifdef FEAT_CURL
 
