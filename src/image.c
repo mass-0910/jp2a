@@ -55,6 +55,30 @@ void print_border(const int width) {
 	#endif
 }
 
+void print_image(Image *image, FILE *f) {
+	if ( verbose ) {
+		fprintf(stderr, "\n");
+		fflush(stderr);
+	}
+
+	normalize(image);
+
+	if ( clearscr ) {
+		fprintf(f, "%c[2J", 27); // ansi code for clear
+		fprintf(f, "%c[0;0H", 27); // move to upper left
+	}
+
+	if ( html && !html_rawoutput ) print_html_image_start(f);
+	else if ( xhtml && !html_rawoutput ) print_xhtml_image_start(f);
+	if ( use_border ) print_border(image->width);
+
+	(!usecolors? print_image_no_colors : print_image_colors) (image, ascii_palette_length - 1, f);
+
+	if ( use_border ) print_border(image->width);
+	if ( html && !html_rawoutput ) print_html_image_end(f);
+	else if ( xhtml && !html_rawoutput ) print_xhtml_image_end(f);
+}
+
 void print_image_colors(const Image* const i, const int chars, FILE* f) {
 
 	int x, y;
@@ -243,7 +267,7 @@ void print_image_colors(const Image* const i, const int chars, FILE* f) {
 	}
 }
 
-void print_image(const Image* const i, const int chars, FILE *f) {
+void print_image_no_colors(const Image* const i, const int chars, FILE *f) {
 	int x, y;
 
 #if ASCII
@@ -661,27 +685,7 @@ void decompress_jpeg(FILE *fp, FILE *fout) {
 		if ( verbose ) print_progress((float) (jpg.output_scanline + 1.0f) / (float) jpg.output_height);
 	}
 
-	if ( verbose ) {
-		fprintf(stderr, "\n");
-		fflush(stderr);
-	}
-
-	normalize(&image);
-
-	if ( clearscr ) {
-		fprintf(fout, "%c[2J", 27); // ansi code for clear
-		fprintf(fout, "%c[0;0H", 27); // move to upper left
-	}
-
-	if ( html && !html_rawoutput ) print_html_image_start(fout);
-	else if ( xhtml && !html_rawoutput ) print_xhtml_image_start(fout);
-	if ( use_border ) print_border(image.width);
-
-	(!usecolors? print_image : print_image_colors) (&image, ascii_palette_length - 1, fout);
-
-	if ( use_border ) print_border(image.width);
-	if ( html && !html_rawoutput ) print_html_image_end(fout);
-	else if ( xhtml && !html_rawoutput ) print_xhtml_image_end(fout);
+	print_image(&image, fout);
 
 	free_image(&image);
 
@@ -773,27 +777,7 @@ void decompress_png(FILE *fp, FILE *fout) {
 	print_progress(1.0);
 	png_read_end(png_ptr, NULL);
 
-	if ( verbose ) {
-		fprintf(stderr, "\n");
-		fflush(stderr);
-	}
-
-	normalize(&image);
-
-	if ( clearscr ) {
-		fprintf(fout, "%c[2J", 27); // ansi code for clear
-		fprintf(fout, "%c[0;0H", 27); // move to upper left
-	}
-
-	if ( html && !html_rawoutput ) print_html_image_start(fout);
-	else if ( xhtml && !html_rawoutput ) print_xhtml_image_start(fout);
-	if ( use_border ) print_border(image.width);
-
-	(!usecolors? print_image : print_image_colors) (&image, ascii_palette_length - 1, fout);
-
-	if ( use_border ) print_border(image.width);
-	if ( html && !html_rawoutput ) print_html_image_end(fout);
-	else if ( xhtml && !html_rawoutput ) print_xhtml_image_end(fout);
+	print_image(&image, fout);
 
 	free_image(&image);
 

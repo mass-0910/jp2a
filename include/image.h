@@ -40,8 +40,9 @@ typedef struct Image_ {
 } Image;
 
 void print_border(const int width);
-void print_image_colors(const Image* const i, const int chars, FILE* f);
-void print_image(const Image* const i, const int chars, FILE *f);
+void print_image(Image *image, FILE *f);
+void print_image_colors(const Image* const i, const int chars, FILE *f);
+void print_image_no_colors(const Image* const i, const int chars, FILE *f);
 void clear(Image* i);
 void normalize(Image* i);
 void print_progress(float progress);
