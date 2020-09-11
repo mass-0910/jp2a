@@ -30,6 +30,7 @@ AC_ARG_WITH([curl-config],
 	[curl_config_path="$PATH"])
 
 AC_CHECK_LIB([jpeg], [jpeg_start_decompress], [LIBS="$LIBS -ljpeg"])
+AC_CHECK_LIB([png], [png_create_read_struct], [LIBS="$LIBS -lpng"])
 
 if test "x$ac_cv_lib_jpeg_jpeg_start_decompress" != "xyes" ; then
 	AC_MSG_ERROR([I need a working jpeglib; please specify --with-jpeg-lib=PATH or see --help for more explicit options.

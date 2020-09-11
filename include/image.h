@@ -15,6 +15,7 @@
 #endif
 
 #include "jpeglib.h"
+#include "png.h"
 #include "html.h"
 
 typedef struct rgb_t {
@@ -31,6 +32,7 @@ typedef struct Image_ {
 	int height;
 	float *pixel; // luminosity
 	float *red, *green, *blue;
+	float *alpha; // opacity
 	int *yadds;
 	float resize_y;
 	float resize_x;
@@ -42,13 +44,16 @@ void print_image_colors(const Image* const i, const int chars, FILE* f);
 void print_image(const Image* const i, const int chars, FILE *f);
 void clear(Image* i);
 void normalize(Image* i);
-void print_progress(const struct jpeg_decompress_struct* jpg);
-void print_info(const struct jpeg_decompress_struct* jpg);
-void process_scanline(const struct jpeg_decompress_struct *jpg,
+void print_progress(float progress);
+void print_info_jpeg(const struct jpeg_decompress_struct* jpg);
+void print_info_png(const png_structp png_ptr, const png_infop info_ptr);
+void process_scanline_jpeg(const struct jpeg_decompress_struct *jpg,
 	const JSAMPLE* scanline, Image* i);
+void process_scanline_png(const png_bytep row, const int current_y, const int color_components, Image* i);
 void free_image(Image* i);
 void malloc_image(Image* i);
-void init_image(Image *i, const struct jpeg_decompress_struct *jpg);
-void decompress(FILE *fin, FILE *fout);
+void init_image(Image *i, int src_width, int src_height);
+void decompress_jpeg(FILE *fin, FILE *fout);
+void decompress_png(FILE *fin, FILE *fout);
 
 #endif

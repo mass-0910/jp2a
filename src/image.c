@@ -19,6 +19,7 @@
 #endif
 
 #include "jpeglib.h"
+#include "png.h"
 
 #include "aspect_ratio.h"
 #include "image.h"
@@ -80,18 +81,23 @@ void print_image_colors(const Image* const i, const int chars, FILE* f) {
 			float R = i->red  [x + (flipy? i->height - y - 1 : y ) * i->width];
 			float G = i->green[x + (flipy? i->height - y - 1 : y ) * i->width];
 			float B = i->blue [x + (flipy? i->height - y - 1 : y ) * i->width];
+			float A = i->alpha [x + (flipy? i->height - y - 1 : y ) * i->width];
+			R *= A;
+			G *= A;
+			B *= A;
 
 			const int pos = ROUND((float)chars * (!invert? Y_inv : Y));
+			int i = ROUND((float)pos * A);
 #if ASCII
-			char ch = ascii_palette[pos];
+			char ch = ascii_palette[i];
 #define	PRINTF_FORMAT_TYPE "%c"
 #else
 			char ch[MB_LEN_MAX + 1];
-			ch[0] = ascii_palette[ascii_palette_indizes[pos]];
-			for ( size_t j = 1; j < ascii_palette_lengths[pos]; j++ ) {
-				ch[j] = ascii_palette[ascii_palette_indizes[pos] + j];
+			ch[0] = ascii_palette[ascii_palette_indizes[i]];
+			for ( size_t j = 1; j < ascii_palette_lengths[i]; j++ ) {
+				ch[j] = ascii_palette[ascii_palette_indizes[i] + j];
 			}
-			ch[ascii_palette_lengths[pos]] = '\0';
+			ch[ascii_palette_lengths[i]] = '\0';
 #define PRINTF_FORMAT_TYPE "%s"
 #endif
 
@@ -265,12 +271,14 @@ void print_image(const Image* const i, const int chars, FILE *f) {
 		for ( x=0; x < i->width; ++x ) {
 
 			const float lum = i->pixel[x + (flipy? i->height - y - 1 : y) * i->width];
+			const float opacity = i->alpha[x + (flipy? i->height - y - 1 : y) * i->width];
 			const int pos = ROUND((float)chars * lum);
 
-#if ASCII
-			line[flipx? i->width - x - 1 : x] = ascii_palette[invert? pos : chars - pos];
-#else
 			int i = invert? pos : chars - pos;
+			i = ROUND((float)i * opacity);
+#if ASCII
+			line[flipx? i->width - x - 1 : x] = ascii_palette[i];
+#else
 			int paletteI = ascii_palette_indizes[i];
 			if ( flipx )
 				curLinePos -= ascii_palette_lengths[i];
@@ -303,6 +311,7 @@ void print_image(const Image* const i, const int chars, FILE *f) {
 void clear(Image* i) {
 	memset(i->yadds, 0, i->height * sizeof(int) );
 	memset(i->pixel, 0, i->width * i->height * sizeof(float));
+	memset(i->alpha, 0b11111111, i->width * i->height * sizeof(float));
 	memset(i->lookup_resx, 0, (1 + i->width) * sizeof(int) );
 
 	if ( usecolors ) {
@@ -346,15 +355,13 @@ void normalize(Image* i) {
 	}
 }
 
-void print_progress(const struct jpeg_decompress_struct* jpg) {
-	float progress;
+void print_progress(float progress) {
 	int pos;
 	#define BARLEN 56
 
 	static char s[BARLEN];
 	s[BARLEN-1] = 0;
 
- 	progress = (float) (jpg->output_scanline + 1.0f) / (float) jpg->output_height;
 	pos = ROUND( (float) (BARLEN-2) * progress );
 
 	memset(s, '.', BARLEN-2);
@@ -364,7 +371,7 @@ void print_progress(const struct jpeg_decompress_struct* jpg) {
 	fflush(stderr);
 }
 
-void print_info(const struct jpeg_decompress_struct* jpg) {
+void print_info_jpeg(const struct jpeg_decompress_struct* jpg) {
 	fprintf(stderr, "Source width: %d\n", jpg->output_width);
 	fprintf(stderr, "Source height: %d\n", jpg->output_height);
 	fprintf(stderr, "Source color components: %d\n", jpg->output_components);
@@ -373,16 +380,52 @@ void print_info(const struct jpeg_decompress_struct* jpg) {
 	fprintf(stderr, "Output palette (%d chars): '%s'\n", ascii_palette_length, ascii_palette);
 }
 
-void process_scanline(const struct jpeg_decompress_struct *jpg, const JSAMPLE* scanline, Image* i) {
+void print_info_png(const png_structp png_ptr, const png_infop info_ptr) {
+	fprintf(stderr, "Source width: %d\n", png_get_image_width(png_ptr, info_ptr));
+	fprintf(stderr, "Source height: %d\n", png_get_image_height(png_ptr, info_ptr));
+	fprintf(stderr, "Source channel count: %d ", png_get_channels(png_ptr, info_ptr));
+	switch ( png_get_color_type(png_ptr, info_ptr) ) {
+		case PNG_COLOR_TYPE_GRAY:
+			fprintf(stderr, "(G)\n");
+			break;
+		case PNG_COLOR_TYPE_GRAY_ALPHA:
+			fprintf(stderr, "(GA)\n");
+			break;
+		case PNG_COLOR_TYPE_PALETTE:
+			fprintf(stderr, "(Palette)\n");
+			break;
+		case PNG_COLOR_TYPE_RGB:
+			fprintf(stderr, "(RGB)\n");
+			break;
+		case PNG_COLOR_TYPE_RGB_ALPHA:
+			fprintf(stderr, "(RGBA)\n");
+			break;
+	}
+	switch ( png_get_interlace_type(png_ptr, info_ptr) ) {
+		case PNG_INTERLACE_NONE:
+			fprintf(stderr, "Source interlacing: None\n");
+			break;
+		case PNG_INTERLACE_ADAM7:
+			fprintf(stderr, "Source interlacing: Adam7\n");
+			break;
+	}
+	fprintf(stderr, "Source bit depth: %d\n", png_get_bit_depth(png_ptr, info_ptr));
+	fprintf(stderr, "Output width: %d\n", width);
+	fprintf(stderr, "Output height: %d\n", height);
+	fprintf(stderr, "Output palette (%d chars): '%s'\n", ascii_palette_length, ascii_palette);
+}
+
+void process_scanline_jpeg(const struct jpeg_decompress_struct *jpg, const JSAMPLE* scanline, Image* i) {
 	static int lasty = 0;
 	const int y = ROUND( i->resize_y * (float) (jpg->output_scanline-1) );
 
 	// include all scanlines since last call
 
-	float *pixel, *red, *green, *blue;
+	float *pixel, *red, *green, *blue, *alpha;
 
 	pixel  = &i->pixel[lasty * i->width];
 	red = green = blue = NULL;
+	alpha  = &i->alpha[lasty * i->width];
 
 	if ( usecolors ) {
 		int offset = lasty * i->width;
@@ -394,12 +437,11 @@ void process_scanline(const struct jpeg_decompress_struct *jpg, const JSAMPLE* s
 	while ( lasty <= y ) {
 
 		const int components = jpg->out_color_components;
-		const int readcolors = usecolors;
 
 		int x;
 		for ( x=0; x < i->width; ++x ) {
-			const JSAMPLE *src     = &scanline[i->lookup_resx[x]];
-			const JSAMPLE *src_end = &scanline[i->lookup_resx[x+1]];
+			const JSAMPLE *src     = &scanline[i->lookup_resx[x] * jpg->out_color_components];
+			const JSAMPLE *src_end = &scanline[i->lookup_resx[x+1] * jpg->out_color_components];
 
 			int adds = 0;
 
@@ -413,7 +455,7 @@ void process_scanline(const struct jpeg_decompress_struct *jpg, const JSAMPLE* s
 				else {
 					v += RED[src[0]] + GREEN[src[1]] + BLUE[src[2]];
 
-					if ( readcolors ) {
+					if ( usecolors ) {
 						r += (float) src[0]/255.0f;
 						g += (float) src[1]/255.0f;
 						b += (float) src[2]/255.0f;
@@ -425,8 +467,9 @@ void process_scanline(const struct jpeg_decompress_struct *jpg, const JSAMPLE* s
 			}
 
 			pixel[x] += adds>1 ? v / (float) adds : v;
+			alpha[x] = 1.0;
 
-			if ( readcolors ) {
+			if ( usecolors ) {
 				red  [x] += adds>1 ? r / (float) adds : r;
 				green[x] += adds>1 ? g / (float) adds : g;
 				blue [x] += adds>1 ? b / (float) adds : b;
@@ -436,8 +479,89 @@ void process_scanline(const struct jpeg_decompress_struct *jpg, const JSAMPLE* s
 		++i->yadds[lasty++];
 
 		pixel += i->width;
+		alpha += i->width;
 
-		if ( readcolors ) {
+		if ( usecolors ) {
+			red   += i->width;
+			green += i->width;
+			blue  += i->width;
+		}
+	}
+
+	lasty = y;
+}
+
+void process_scanline_png(const png_bytep row, const int current_y, const int color_components, Image* i) {
+	static int lasty = 0;
+	const int y = ROUND( i->resize_y * (float) current_y );
+
+	// include all scanlines since last call
+
+	float *pixel, *red, *green, *blue, *alpha;
+
+	pixel  = &i->pixel[lasty * i->width];
+	red = green = blue = NULL;
+	alpha = &i->alpha[lasty * i->width];
+
+	if ( usecolors ) {
+		int offset = lasty * i->width;
+		red   = &i->red  [offset];
+		green = &i->green[offset];
+		blue  = &i->blue [offset];
+	}
+
+	while ( lasty <= y ) {
+
+		int x;
+		for ( x=0; x < i->width; ++x ) {
+
+			int adds = 0;
+
+			float v, r, g, b, a;
+			v = r = g = b = a = 0.0f;
+
+			for ( int j = i->lookup_resx[x] ; j < i->lookup_resx[x+1]; ++j ) {
+				png_byte* src_pixel = &(row[j * color_components]);
+
+				if ( color_components < 3 ) {
+					v += GRAY[src_pixel[0]];
+					if ( color_components == 2 )
+						a += ALPHA[src_pixel[1]];
+				} else {
+					v += RED[src_pixel[0]] + GREEN[src_pixel[1]] + BLUE[src_pixel[2]];
+
+					if ( usecolors ) {
+						r += (float) src_pixel[0]/255.0f;
+						g += (float) src_pixel[1]/255.0f;
+						b += (float) src_pixel[2]/255.0f;
+					}
+					if ( color_components == 4 )
+						a += ALPHA[src_pixel[3]];
+				}
+
+				++adds;
+			}
+
+			pixel[x] += adds>1 ? v / (float) adds : v;
+
+			if ( usecolors ) {
+				red  [x] += adds>1 ? r / (float) adds : r;
+				green[x] += adds>1 ? g / (float) adds : g;
+				blue [x] += adds>1 ? b / (float) adds : b;
+			}
+			if ( color_components == 1 || color_components == 3 ) {
+				alpha[x] = 1.0;
+			} else {
+				alpha[x] = adds>1 ? a / (float) adds : a;
+			}
+		}
+
+		++i->yadds[lasty++];
+
+		pixel += i->width;
+		alpha += i->width;
+
+		if ( usecolors ) {
 			red   += i->width;
 			green += i->width;
 			blue  += i->width;
@@ -449,6 +573,7 @@ void process_scanline(const struct jpeg_decompress_struct *jpg, const JSAMPLE* s
 
 void free_image(Image* i) {
 	if ( i->pixel ) free(i->pixel);
+	if ( i->alpha ) free(i->alpha);
 	if ( i->red ) free(i->red);
 	if ( i->green ) free(i->green);
 	if ( i->blue ) free(i->blue);
@@ -457,7 +582,7 @@ void free_image(Image* i) {
 }
 
 void malloc_image(Image* i) {
-	i->pixel = i->red = i->green = i->blue = NULL;
+	i->pixel = i->red = i->green = i->blue = i->alpha = NULL;
 	i->yadds = NULL;
 	i->lookup_resx = NULL;
 
@@ -466,6 +591,7 @@ void malloc_image(Image* i) {
 
 	i->yadds = (int*) malloc(height * sizeof(int));
 	i->pixel = (float*) malloc(width*height*sizeof(float));
+	i->alpha = (float*) malloc(width*height*sizeof(float));
 
 	if ( usecolors ) {
 		i->red   = (float*) malloc(width*height*sizeof(float));
@@ -473,10 +599,10 @@ void malloc_image(Image* i) {
 		i->blue  = (float*) malloc(width*height*sizeof(float));
 	}
 
-	// we allocate one extra pixel for resx because of the src .. src_end stuff in process_scanline
+	// we allocate one extra pixel for resx because of the src .. src_end stuff in process_scanline_jpeg and the equivalent in for PNG
 	i->lookup_resx = (int*) malloc( (1 + width) * sizeof(int));
 
-	if ( !(i->pixel && i->yadds && i->lookup_resx) ||
+	if ( !(i->pixel && i->alpha && i->yadds && i->lookup_resx) ||
 	     (usecolors && !(i->red && i->green && i->blue)) )
 	{
 		fprintf(stderr, "Not enough memory for given output dimension\n");
@@ -485,19 +611,18 @@ void malloc_image(Image* i) {
 	}
 }
 
-void init_image(Image *i, const struct jpeg_decompress_struct *jpg) {
+void init_image(Image *i, int src_width, int src_height) {
 	int dst_x;
 
-	i->resize_y = (float) (i->height - 1) / (float) (jpg->output_height - 1);
-	i->resize_x = (float) (jpg->output_width - 1) / (float) (i->width );
+	i->resize_y = (float) (i->height - 1) / (float) (src_height - 1);
+	i->resize_x = (float) (src_width - 1) / (float) (i->width );
 
 	for ( dst_x=0; dst_x <= i->width; ++dst_x ) {
 		i->lookup_resx[dst_x] = ROUND( (float) dst_x * i->resize_x );
-		i->lookup_resx[dst_x] *= jpg->out_color_components;
 	}
 }
 
-void decompress(FILE *fp, FILE *fout) {
+void decompress_jpeg(FILE *fp, FILE *fout) {
 	int row_stride;
 	struct jpeg_error_mgr jerr;
 	struct jpeg_decompress_struct jpg;
@@ -526,14 +651,14 @@ void decompress(FILE *fp, FILE *fout) {
 	malloc_image(&image);
 	clear(&image);
 
-	if ( verbose ) print_info(&jpg);
+	if ( verbose ) print_info_jpeg(&jpg);
 
-	init_image(&image, &jpg);
+	init_image(&image, jpg.output_width, jpg.output_height);
 
 	while ( jpg.output_scanline < jpg.output_height ) {
 		jpeg_read_scanlines(&jpg, buffer, 1);
-		process_scanline(&jpg, buffer[0], &image);
-		if ( verbose ) print_progress(&jpg);
+		process_scanline_jpeg(&jpg, buffer[0], &image);
+		if ( verbose ) print_progress((float) (jpg.output_scanline + 1.0f) / (float) jpg.output_height);
 	}
 
 	if ( verbose ) {
@@ -562,4 +687,115 @@ void decompress(FILE *fp, FILE *fout) {
 
 	jpeg_finish_decompress(&jpg);
 	jpeg_destroy_decompress(&jpg);
+}
+
+void decompress_png(FILE *fp, FILE *fout) {
+	Image image;
+	int number_bytes_to_check = 8;
+	char header[number_bytes_to_check];
+	if ( fread(&header, 1, number_bytes_to_check, fp) != number_bytes_to_check || png_sig_cmp(header, 0, number_bytes_to_check) ) {
+		fprintf(stderr, "Not a PNG.\n");
+		// TODO: Proper error handling
+		exit(1);
+	}
+	png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+	if ( !png_ptr ) {
+		fprintf(stderr, "Unable to setup PNG reading, skipping file.\n");
+		return;
+	}
+	png_infop info_ptr = png_create_info_struct(png_ptr);
+	if ( !info_ptr ) {
+		fprintf(stderr, "Unable to setup PNG reading, skipping file.\n");
+		png_destroy_read_struct(&png_ptr, NULL, NULL);
+		return;
+	}
+	png_init_io(png_ptr, fp);
+	png_set_sig_bytes(png_ptr, number_bytes_to_check);
+	png_read_info(png_ptr, info_ptr);
+
+	int width = png_get_image_width(png_ptr, info_ptr);
+	int height = png_get_image_height(png_ptr, info_ptr);
+
+	aspect_ratio(width, height);
+
+
+	malloc_image(&image);
+	clear(&image);
+
+	if ( verbose ) print_info_png(png_ptr, info_ptr);
+
+	// peform transformations (after printing the info):
+	if ( png_get_color_type(png_ptr, info_ptr) == PNG_COLOR_TYPE_PALETTE )
+		png_set_palette_to_rgb(png_ptr);
+	if ( png_get_bit_depth(png_ptr, info_ptr) < 8 ) {
+		if ( png_get_channels(png_ptr, info_ptr) < 3 ) {
+			png_set_expand_gray_1_2_4_to_8(png_ptr);
+		} else {
+			png_set_expand(png_ptr);
+		}
+	}
+	if ( png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS) )
+		png_set_tRNS_to_alpha(png_ptr);
+	if ( png_get_bit_depth(png_ptr, info_ptr) == 16 )
+		png_set_strip_16(png_ptr);
+	int number_of_passes = png_set_interlace_handling(png_ptr);
+	png_read_update_info(png_ptr, info_ptr);
+
+	init_image(&image, width, height);
+
+	print_progress(0.0);
+	if ( png_get_interlace_type(png_ptr, info_ptr) == PNG_INTERLACE_NONE ) {
+		png_bytep row_pointer = png_malloc(png_ptr, width * png_get_channels(png_ptr, info_ptr) * 1);
+		for ( int y = 0; y < height; y++ ) {
+			png_read_row(png_ptr, row_pointer, NULL);
+			process_scanline_png(row_pointer, y, png_get_channels(png_ptr, info_ptr), &image);
+			print_progress((float) y/height);
+		}
+		png_free(png_ptr, row_pointer);
+	} else {
+		png_bytepp row_pointers = png_malloc(png_ptr, height * sizeof(png_bytep));
+		for ( int i = 0; i < height; ++i )
+			row_pointers[i] = NULL;
+		for ( int i = 0; i < height; ++i )
+			row_pointers[i] = png_malloc(png_ptr, width * png_get_channels(png_ptr, info_ptr) * 1);
+		// png_read_image would do the same thing, but progress could not be displayed
+		for ( int passes = 0; passes < number_of_passes; ++passes ) {
+			png_read_rows(png_ptr, row_pointers, NULL, height);
+			print_progress((float) (passes + 1)/number_of_passes);
+		}
+		for ( int y = 0; y < height; y++ ) {
+			process_scanline_png(row_pointers[y], y, png_get_channels(png_ptr, info_ptr), &image);
+		}
+		for ( int i = 0; i < height; ++i )
+			png_free(png_ptr, row_pointers[i]);
+		png_free(png_ptr, row_pointers);
+	}
+	print_progress(1.0);
+	png_read_end(png_ptr, NULL);
+
+	if ( verbose ) {
+		fprintf(stderr, "\n");
+		fflush(stderr);
+	}
+
+	normalize(&image);
+
+	if ( clearscr ) {
+		fprintf(fout, "%c[2J", 27); // ansi code for clear
+		fprintf(fout, "%c[0;0H", 27); // move to upper left
+	}
+
+	if ( html && !html_rawoutput ) print_html_image_start(fout);
+	else if ( xhtml && !html_rawoutput ) print_xhtml_image_start(fout);
+	if ( use_border ) print_border(image.width);
+
+	(!usecolors? print_image : print_image_colors) (&image, ascii_palette_length - 1, fout);
+
+	if ( use_border ) print_border(image.width);
+	if ( html && !html_rawoutput ) print_html_image_end(fout);
+	else if ( xhtml && !html_rawoutput ) print_xhtml_image_end(fout);
+
+	free_image(&image);
+
+	png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
 }

@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
 			_setmode( _fileno( stdin ), _O_BINARY );
 			#endif
 
-			decompress(stdin, fout);
+			decompress_jpeg(stdin, fout);
 			continue;
 		}
 
@@ -98,7 +98,7 @@ int main(int argc, char** argv) {
 				return 1;
 			}
 
-			decompress(fr, fout);
+			decompress_jpeg(fr, fout);
 			fclose(fr);
 			close(fd);
 			
@@ -111,7 +111,7 @@ int main(int argc, char** argv) {
 			if ( verbose )
 				fprintf(stderr, "File: %s\n", argv[n]);
 
-			decompress(fp, fout);
+			decompress_jpeg(fp, fout);
 			fclose(fp);
 
 			continue;

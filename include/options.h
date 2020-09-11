@@ -40,7 +40,7 @@ extern unsigned char ascii_palette_indizes[];
 extern char ascii_palette_lengths[];
 #endif
 extern float redweight, greenweight, blueweight;
-extern float RED[256], GREEN[256], BLUE[256], GRAY[256];
+extern float RED[256], GREEN[256], BLUE[256], ALPHA[256], GRAY[256];
 extern const char *fileout;
 extern int usecolors;
 extern int colorDepth;
