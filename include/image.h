@@ -16,6 +16,8 @@
 
 #include "jpeglib.h"
 #include "png.h"
+#include <setjmp.h>
+
 #include "html.h"
 
 typedef struct rgb_t {
@@ -39,6 +41,20 @@ typedef struct Image_ {
 	int *lookup_resx;
 } Image;
 
+typedef struct my_jpeg_error_mgr {
+	struct jpeg_error_mgr pub;
+	jmp_buf setjmp_buffer;
+} my_jpeg_error_mgr;
+typedef struct my_jpeg_error_mgr *my_jpeg_error_ptr;
+
+typedef struct error_collector {
+	my_jpeg_error_mgr *jpeg_error;
+	char *png_error_msg;
+	// These are true if an error has occurred and false otherwise:
+	int jpeg_status;
+	int png_status;
+} error_collector;
+
 void print_border(const int width);
 void print_image(Image *image, FILE *f);
 void print_image_colors(const Image* const i, const int chars, FILE *f);
@@ -54,7 +70,9 @@ void process_scanline_png(const png_bytep row, const int current_y, const int co
 void free_image(Image* i);
 void malloc_image(Image* i);
 void init_image(Image *i, int src_width, int src_height);
-void decompress_jpeg(FILE *fin, FILE *fout);
-void decompress_png(FILE *fin, FILE *fout);
+void decompress_jpeg(FILE *fin, FILE *fout, error_collector *errors);
+void jpeg_error_exit(j_common_ptr jerr);
+void decompress_png(FILE *fin, FILE *fout, error_collector *errors);
+void print_errors(error_collector *errors);
 
 #endif

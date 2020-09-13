@@ -33,6 +33,13 @@
 int main(int argc, char** argv) {
 	int store_width, store_height, store_autow, store_autoh;
 	FILE *fout = stdout;
+	// FILEs from downloads and pipes are not seekable.
+	// Solution: Copy in a buffer and use fmemopen.
+	char *buffer = NULL;
+	size_t buffer_size = 0;
+
+	error_collector errors;
+	int retval = 0;
 #ifdef FEAT_CURL
 	FILE *fr;
 	int fd;
@@ -74,6 +81,9 @@ int main(int argc, char** argv) {
 		if ( argv[n][0]=='-' && argv[n][1] )
 			continue;
 
+		errors.jpeg_status = 0;
+		errors.png_status = 0;
+
 		// read from stdin
 		if ( argv[n][0]=='-' && !argv[n][1] ) {
 			#ifdef _WIN32
@@ -81,7 +91,17 @@ int main(int argc, char** argv) {
 			_setmode( _fileno( stdin ), _O_BINARY );
 			#endif
 
-			decompress_jpeg(stdin, fout);
+			size_t actual_size = 0;
+			if ( read_into_buffer(stdin, &buffer, &buffer_size, &actual_size) ) {
+				FILE *buffer_f = fmemopen(buffer, actual_size, "rb");
+				if ( buffer_f != NULL ) {
+					decompress_jpeg(buffer_f, fout, &errors);
+					fclose(buffer_f);
+				}
+			}
+
+			if ( errors.jpeg_status && errors.png_status )
+				retval = 1;
 			continue;
 		}
 
@@ -98,10 +118,23 @@ int main(int argc, char** argv) {
 				return 1;
 			}
 
-			decompress_jpeg(fr, fout);
+			size_t actual_size = 0;
+			if ( read_into_buffer(fr, &buffer, &buffer_size, &actual_size) ) {
+				FILE *buffer_f = fmemopen(buffer, actual_size, "rb");
+				if ( buffer_f != NULL ) {
+					int urllen = strlen(argv[n]);
+					if ( urllen > 4 && strcmp(".png", argv[n] + (urllen - 4)) == 0 )
+						decompress_png(buffer_f, fout, &errors);
+					else
+						decompress_jpeg(buffer_f, fout, &errors);
+					fclose(buffer_f);
+				}
+			}
 			fclose(fr);
 			close(fd);
 			
+			if ( errors.jpeg_status && errors.png_status )
+				retval = 1;
 			continue;
 		}
 		#endif
@@ -111,9 +144,15 @@ int main(int argc, char** argv) {
 			if ( verbose )
 				fprintf(stderr, "File: %s\n", argv[n]);
 
-			decompress_jpeg(fp, fout);
+			int namelen = strlen(argv[n]);
+			if ( namelen > 4 && strcmp(".png", argv[n] + (namelen - 4)) == 0 )
+				decompress_png(fp, fout, &errors);
+			else
+				decompress_jpeg(fp, fout, &errors);
 			fclose(fp);
 
+			if ( errors.jpeg_status && errors.png_status )
+				retval = 1;
 			continue;
 
 		} else {
@@ -125,8 +164,45 @@ int main(int argc, char** argv) {
 	if ( html && !html_rawoutput ) print_html_document_end(fout);
 	else if ( xhtml && !html_rawoutput ) print_xhtml_document_end(fout);
 
+	if ( buffer_size != 0 ) {
+		free(buffer);
+	}
 	if ( fout != stdout )
 		fclose(fout);
 
-	return 0;
+	return retval;
+}
+
+int read_into_buffer(FILE *fp, char **buffer, size_t *buffer_size, size_t *actual_size) {
+#define BUFFER_ALLOC_INCREMENTS 16384
+	*actual_size = 0;
+	if ( *buffer_size == 0 ) {
+		*buffer_size = BUFFER_ALLOC_INCREMENTS;
+		*buffer = malloc(*buffer_size);
+		if ( *buffer == NULL ) {
+			fprintf(stderr, "Not enough memory. Skipping an image.\n");
+			*buffer_size = 0;
+			return 0;
+		}
+	}
+	char *current = *buffer;
+	while ( !feof(fp) ) {
+		*actual_size += fread(current, 1, BUFFER_ALLOC_INCREMENTS, fp);
+		if ( *actual_size == *buffer_size ) {
+			*buffer_size += BUFFER_ALLOC_INCREMENTS;
+			if ( debug )
+				fprintf(stdout, "Reallocating to: %d\n", *buffer_size);
+			current = realloc(*buffer, *buffer_size);
+			if ( current == NULL ) {
+				fprintf(stderr, "Not enough memory. Skipping an image.\n");
+				*buffer_size -= BUFFER_ALLOC_INCREMENTS;
+				return 0;
+			}
+			*buffer = current;
+		}
+		current = *buffer + *actual_size;
+	}
+	if ( debug )
+		fprintf(stderr, "Size: %d\n", *actual_size);
+	return 1;
 }

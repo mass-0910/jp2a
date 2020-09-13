@@ -99,7 +99,7 @@ if test "x$enable_curl" = "xyes" ; then
 		[ AC_MSG_WARN([required header file curl/curl.h not found, libcurl will be disabled (see --help)]) ])
 fi
 
-AC_CHECK_HEADERS([fcntl.h curses.h term.h ncurses/term.h math.h limits.h locale.h stdlib.h string.h unistd.h wchar.h])
+AC_CHECK_HEADERS([fcntl.h curses.h term.h ncurses/term.h math.h limits.h locale.h stdlib.h string.h unistd.h wchar.h setjmp.h])
 
 if test "$enable_termlib" = "yes" ; then
 

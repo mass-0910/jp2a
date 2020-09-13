@@ -20,6 +20,7 @@
 
 #include "jpeglib.h"
 #include "png.h"
+#include <setjmp.h>
 
 #include "aspect_ratio.h"
 #include "image.h"
@@ -646,14 +647,27 @@ void init_image(Image *i, int src_width, int src_height) {
 	}
 }
 
-void decompress_jpeg(FILE *fp, FILE *fout) {
+void decompress_jpeg(FILE *fp, FILE *fout, error_collector *errors) {
+	if ( errors->jpeg_status ) {
+		print_errors(errors);
+		return;
+	}
 	int row_stride;
-	struct jpeg_error_mgr jerr;
+	my_jpeg_error_mgr jerr;
 	struct jpeg_decompress_struct jpg;
 	JSAMPARRAY buffer;
 	Image image;
 
-	jpg.err = jpeg_std_error(&jerr);
+	jpg.err = jpeg_std_error(&jerr.pub);
+	jerr.pub.error_exit = jpeg_error_exit;
+	if ( setjmp(jerr.setjmp_buffer) ) {
+		errors->jpeg_error = &jerr;
+		errors->jpeg_status = 1;
+		jpeg_destroy_decompress(&jpg);
+		rewind(fp);
+		decompress_png(fp, fout, errors);
+		return;
+	}
 	jpeg_create_decompress(&jpg);
 	jpeg_stdio_src(&jpg, fp);
 	jpeg_read_header(&jpg, TRUE);
@@ -693,14 +707,25 @@ void decompress_jpeg(FILE *fp, FILE *fout) {
 	jpeg_destroy_decompress(&jpg);
 }
 
-void decompress_png(FILE *fp, FILE *fout) {
+void jpeg_error_exit(j_common_ptr jerr) {
+	my_jpeg_error_ptr myerr = (my_jpeg_error_ptr)jerr->err;
+	longjmp(myerr->setjmp_buffer, 1);
+}
+
+void decompress_png(FILE *fp, FILE *fout, error_collector *errors) {
+	if ( errors->png_status ) {
+		print_errors(errors);
+		return;
+	}
 	Image image;
 	int number_bytes_to_check = 8;
 	char header[number_bytes_to_check];
 	if ( fread(&header, 1, number_bytes_to_check, fp) != number_bytes_to_check || png_sig_cmp(header, 0, number_bytes_to_check) ) {
-		fprintf(stderr, "Not a PNG.\n");
-		// TODO: Proper error handling
-		exit(1);
+		errors->png_error_msg = "Not a PNG file: Wrong signature";
+		errors->png_status = 1;
+		rewind(fp);
+		decompress_jpeg(fp, fout, errors);
+		return;
 	}
 	png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 	if ( !png_ptr ) {
@@ -713,6 +738,14 @@ void decompress_png(FILE *fp, FILE *fout) {
 		png_destroy_read_struct(&png_ptr, NULL, NULL);
 		return;
 	}
+	if ( setjmp(png_jmpbuf(png_ptr)) ) {
+		errors->png_error_msg = "Not a valid PNG file.";
+		errors->png_status = 1;
+		png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
+		rewind(fp);
+		decompress_jpeg(fp, fout, errors);
+		return;
+	}
 	png_init_io(png_ptr, fp);
 	png_set_sig_bytes(png_ptr, number_bytes_to_check);
 	png_read_info(png_ptr, info_ptr);
@@ -721,7 +754,6 @@ void decompress_png(FILE *fp, FILE *fout) {
 	int height = png_get_image_height(png_ptr, info_ptr);
 
 	aspect_ratio(width, height);
-
 
 	malloc_image(&image);
 	clear(&image);
@@ -747,13 +779,15 @@ void decompress_png(FILE *fp, FILE *fout) {
 
 	init_image(&image, width, height);
 
-	print_progress(0.0);
+	if ( verbose )
+		print_progress(0.0);
 	if ( png_get_interlace_type(png_ptr, info_ptr) == PNG_INTERLACE_NONE ) {
 		png_bytep row_pointer = png_malloc(png_ptr, width * png_get_channels(png_ptr, info_ptr) * 1);
 		for ( int y = 0; y < height; y++ ) {
 			png_read_row(png_ptr, row_pointer, NULL);
 			process_scanline_png(row_pointer, y, png_get_channels(png_ptr, info_ptr), &image);
-			print_progress((float) y/height);
+			if ( verbose )
+				print_progress((float) y/height);
 		}
 		png_free(png_ptr, row_pointer);
 	} else {
@@ -765,7 +799,8 @@ void decompress_png(FILE *fp, FILE *fout) {
 		// png_read_image would do the same thing, but progress could not be displayed
 		for ( int passes = 0; passes < number_of_passes; ++passes ) {
 			png_read_rows(png_ptr, row_pointers, NULL, height);
-			print_progress((float) (passes + 1)/number_of_passes);
+			if ( verbose )
+				print_progress((float) (passes + 1)/number_of_passes);
 		}
 		for ( int y = 0; y < height; y++ ) {
 			process_scanline_png(row_pointers[y], y, png_get_channels(png_ptr, info_ptr), &image);
@@ -774,7 +809,8 @@ void decompress_png(FILE *fp, FILE *fout) {
 			png_free(png_ptr, row_pointers[i]);
 		png_free(png_ptr, row_pointers);
 	}
-	print_progress(1.0);
+	if ( verbose )
+		print_progress(1.0);
 	png_read_end(png_ptr, NULL);
 
 	print_image(&image, fout);
@@ -782,4 +818,16 @@ void decompress_png(FILE *fp, FILE *fout) {
 	free_image(&image);
 
 	png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
+}
+
+void print_errors(error_collector *errors) {
+	if ( errors->jpeg_status ) {
+		my_jpeg_error_mgr *jerr = errors->jpeg_error;
+		struct jpeg_common_struct cinfo;
+		cinfo.err = &jerr->pub;
+		(jerr->pub.output_message) ((j_common_ptr)&cinfo);
+	}
+	if ( errors->png_status ) {
+		fprintf(stderr, "%s\n", errors->png_error_msg);
+	}
 }

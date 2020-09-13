@@ -110,11 +110,11 @@ void help() {
 #ifdef FEAT_CURL
 "Usage: jp2a [ options ] [ file(s) | URL(s) ]\n\n"
 
-"Convert files or URLs from JPEG format to ASCII.\n\n"
+"Convert files or URLs from JPEG/PNG format to ASCII.\n\n"
 #else
 "Usage: jp2a [ options ] [ file(s) ]\n\n"
 
-"Convert files in JPEG format to ASCII.\n\n"
+"Convert files in JPEG/PNG format to ASCII.\n\n"
 #endif
 "OPTIONS\n"
 "  -                 Read images from standard input.\n"

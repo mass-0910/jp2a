@@ -4,7 +4,7 @@ jp2a
 ![full-check](https://github.com/Talinx/jp2a/workflows/full-check/badge.svg?branch=master)
 
 
-jp2a is a simple JPEG to ASCII converter.
+jp2a is a simple JPEG/PNG to ASCII converter.
 
 The source is available at <https://github.com/Talinx/jp2a>. This project
 used to be hosted on SourceForge.
@@ -97,6 +97,9 @@ on some `.jpg` files. You can also use `make check`. When you're ready to instal
 jp2a depends on jpeglib. In case configure fails beacuse jpeglib is not installed,
 it can be built and installed manually. Independent JPEG Group provides a UNIX format
 package in tar.gz format which can be downloaded from http://www.ijg.org/.
+
+jp2a uses libpng for reading PNG images. libpng is available at
+http://libpng.org/pub/png/libpng.html
 
 Extract the archive and follow the instructions inside 'install.txt' to build and
 install it. For a default install, the corresponding `.so` (shared object) files
