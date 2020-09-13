@@ -191,7 +191,7 @@ int read_into_buffer(FILE *fp, char **buffer, size_t *buffer_size, size_t *actua
 		if ( *actual_size == *buffer_size ) {
 			*buffer_size += BUFFER_ALLOC_INCREMENTS;
 			if ( debug )
-				fprintf(stdout, "Reallocating to: %d\n", *buffer_size);
+				fprintf(stdout, "Reallocating to: %ld\n", *buffer_size);
 			current = realloc(*buffer, *buffer_size);
 			if ( current == NULL ) {
 				fprintf(stderr, "Not enough memory. Skipping an image.\n");
@@ -203,6 +203,6 @@ int read_into_buffer(FILE *fp, char **buffer, size_t *buffer_size, size_t *actua
 		current = *buffer + *actual_size;
 	}
 	if ( debug )
-		fprintf(stderr, "Size: %d\n", *actual_size);
+		fprintf(stderr, "Size: %ld\n", *actual_size);
 	return 1;
 }

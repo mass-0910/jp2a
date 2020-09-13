@@ -80,33 +80,33 @@ void print_image(Image *image, FILE *f) {
 	else if ( xhtml && !html_rawoutput ) print_xhtml_image_end(f);
 }
 
-void print_image_colors(const Image* const i, const int chars, FILE* f) {
+void print_image_colors(const Image* const image, const int chars, FILE* f) {
 
 	int x, y;
 	int xstart, xend, xincr;
 
-	for ( y=0;  y < i->height; ++y ) {
+	for ( y=0;  y < image->height; ++y ) {
 
 		if ( use_border ) fprintf(f, "|");
 
 		xstart = 0;
-		xend   = i->width;
+		xend   = image->width;
 		xincr  = 1;
 
 		if ( flipx ) {
-			xstart = i->width - 1;
+			xstart = image->width - 1;
 			xend = -1;
 			xincr = -1;
 		}
 
 		for ( x=xstart; x != xend; x += xincr ) {
 
-			float Y = i->pixel[x + (flipy? i->height - y - 1 : y ) * i->width];
+			float Y = image->pixel[x + (flipy? image->height - y - 1 : y ) * image->width];
 			float Y_inv = 1.0f - Y;
-			float R = i->red  [x + (flipy? i->height - y - 1 : y ) * i->width];
-			float G = i->green[x + (flipy? i->height - y - 1 : y ) * i->width];
-			float B = i->blue [x + (flipy? i->height - y - 1 : y ) * i->width];
-			float A = i->alpha [x + (flipy? i->height - y - 1 : y ) * i->width];
+			float R = image->red  [x + (flipy? image->height - y - 1 : y ) * image->width];
+			float G = image->green[x + (flipy? image->height - y - 1 : y ) * image->width];
+			float B = image->blue [x + (flipy? image->height - y - 1 : y ) * image->width];
+			float A = image->alpha [x + (flipy? image->height - y - 1 : y ) * image->width];
 			R *= A;
 			G *= A;
 			B *= A;
@@ -268,41 +268,41 @@ void print_image_colors(const Image* const i, const int chars, FILE* f) {
 	}
 }
 
-void print_image_no_colors(const Image* const i, const int chars, FILE *f) {
+void print_image_no_colors(const Image* const image, const int chars, FILE *f) {
 	int x, y;
 
 #if ASCII
 	#ifdef WIN32
-	char *line = (char*) malloc(i->width + 1);
+	char *line = (char*) malloc(image->width + 1);
 	#else
-	char line[i->width + 1];
+	char line[image->width + 1];
 	#endif
-	line[i->width] = 0;
+	line[image->width] = 0;
 #else
 	#ifdef WIN32
-	char *line = (char*) malloc(i->width * MB_LEN_MAX + 1);
+	char *line = (char*) malloc(image->width * MB_LEN_MAX + 1);
 	#else
-	char line[i->width * MB_LEN_MAX + 1];
+	char line[image->width * MB_LEN_MAX + 1];
 	#endif
 	int curLinePos;
-	line[i->width * MB_LEN_MAX] = 0;
+	line[image->width * MB_LEN_MAX] = 0;
 #endif
 
-	for ( y=0; y < i->height; ++y ) {
+	for ( y=0; y < image->height; ++y ) {
 
 #if ! ASCII
-		curLinePos = flipx? i->width * MB_LEN_MAX : 0;
+		curLinePos = flipx? image->width * MB_LEN_MAX : 0;
 #endif
-		for ( x=0; x < i->width; ++x ) {
+		for ( x=0; x < image->width; ++x ) {
 
-			const float lum = i->pixel[x + (flipy? i->height - y - 1 : y) * i->width];
-			const float opacity = i->alpha[x + (flipy? i->height - y - 1 : y) * i->width];
+			const float lum = image->pixel[x + (flipy? image->height - y - 1 : y) * image->width];
+			const float opacity = image->alpha[x + (flipy? image->height - y - 1 : y) * image->width];
 			const int pos = ROUND((float)chars * lum);
 
 			int i = invert? pos : chars - pos;
 			i = ROUND((float)i * opacity);
 #if ASCII
-			line[flipx? i->width - x - 1 : x] = ascii_palette[i];
+			line[flipx? image->width - x - 1 : x] = ascii_palette[i];
 #else
 			int paletteI = ascii_palette_indizes[i];
 			if ( flipx )
@@ -336,7 +336,9 @@ void print_image_no_colors(const Image* const i, const int chars, FILE *f) {
 void clear(Image* i) {
 	memset(i->yadds, 0, i->height * sizeof(int) );
 	memset(i->pixel, 0, i->width * i->height * sizeof(float));
-	memset(i->alpha, 0b11111111, i->width * i->height * sizeof(float));
+	for ( int j = 0; j < i->width * i->height; ++j ) {
+		i->alpha[j] = 1.0;
+	}
 	memset(i->lookup_resx, 0, (1 + i->width) * sizeof(int) );
 
 	if ( usecolors ) {
@@ -577,7 +579,10 @@ void process_scanline_png(const png_bytep row, const int current_y, const int co
 			if ( color_components == 1 || color_components == 3 ) {
 				alpha[x] = 1.0;
 			} else {
-				alpha[x] = adds>1 ? a / (float) adds : a;
+				if ( a == 0.0 )
+					alpha[x] = 0.0;
+				else
+					alpha[x] = adds>1 ? a / (float) adds : a;
 			}
 		}
 
@@ -639,7 +644,10 @@ void malloc_image(Image* i) {
 void init_image(Image *i, int src_width, int src_height) {
 	int dst_x;
 
-	i->resize_y = (float) (i->height - 1) / (float) (src_height - 1);
+	if ( src_height > 1 )
+		i->resize_y = (float) (i->height - 1) / (float) (src_height - 1);
+	else
+		i->resize_y = 1;
 	i->resize_x = (float) (src_width - 1) / (float) (i->width );
 
 	for ( dst_x=0; dst_x <= i->width; ++dst_x ) {
