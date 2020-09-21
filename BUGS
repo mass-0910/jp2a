@@ -1,7 +1,3 @@
-Things to do:
-- Add --html-imageonly, which gives JUST the image data, so you can embed the image and format
-  the page in your own style.
-
 TODO
 - What about making a Windows installer?
 - What about making a small GUI for windows?  If run, open a file browser, then convert and display
@@ -14,5 +10,4 @@ TODO
 - Consider using other libs for image conversions, e.g. would be nice to read GIF.  (See gdlib.)
 
 BUGS
-- Using --term-fit and multiple files, the fit only works for the first image.
 - Floating-point calculation (and rounding) is not 100% equal from compiler to compiler.  Try to fix this.
