@@ -31,15 +31,6 @@
 
 #include "html.h"
 
-typedef struct rgb_t {
-	JSAMPLE r, g, b;
-} rgb_t;
-
-typedef struct image_t {
-	int w, h;
-	rgb_t *pixels;
-} image_t;
-
 /*! \struct Image_
  * \brief Holds a decompressed image.
  *
