@@ -82,7 +82,7 @@ unsigned char ascii_palette_indizes[ASCII_PALETTE_SIZE] = {0, 1, 2, 3, 4, 5, 6, 
 char ascii_palette_lengths[ASCII_PALETTE_SIZE] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 #endif
 
-// Default weights, must add up to 1.0
+// Default weights
 float redweight = 0.2989f;
 float greenweight = 0.5866f;
 float blueweight = 0.1145f;
@@ -90,7 +90,7 @@ float blueweight = 0.1145f;
 // calculated in parse_options
 float RED[256], GREEN[256], BLUE[256], ALPHA[256], GRAY[256];
 
-const char *fileout = "-"; // stdout
+const char *fileout = "-";
 
 const char* version   = PACKAGE_STRING;
 const char* copyright = "Copyright 2006-2016 Christian Stigen Larsen\n"

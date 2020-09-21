@@ -39,12 +39,6 @@
 
 #include <string.h>
 
-/*
- * Returns:  1  success
- *           0  terminal type not defined
- *          -1  termcap database inaccessible
- *          -2  environment variable TERM not set
- */
 int get_termsize(int* _width, int* _height, char** err) {
 	static char errstr[1024];
 

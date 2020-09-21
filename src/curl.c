@@ -44,7 +44,6 @@
 int fd[2], debugopt;
 const char* URL;
 
-//! Return 1 if s is a supported URL
 int is_url(const char* s) {
 	return !strncmp(s, "ftp://", 6)
 		| !strncmp(s, "ftps://", 7)
@@ -106,7 +105,6 @@ void curl_download_child(void*)
 #endif	
 }
 
-// Return read-only file-descriptor that must be closed.
 int curl_download(const char* url, const int debug) {
 #ifndef WIN32
 	int pid;
