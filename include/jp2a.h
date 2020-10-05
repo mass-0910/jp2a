@@ -12,6 +12,10 @@
 #ifndef INC_JP2A_H
 #define INC_JP2A_H
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 /*!
  * \brief The main function.
  *
@@ -34,5 +38,21 @@ int main(int argc, char** argv);
  * \return true if sucessful, false otherwise
  */
 int read_into_buffer(FILE *fp, char **buffer, size_t *buffer_size, size_t *actual_size);
+
+#ifdef _WIN32
+
+/*!
+ * \brief fmemopen alternative for Windows.
+ *
+ * Windows does not support opening a file stream to part of the RAM.
+ * This function creates a temporary file and writes the contents of the buffer to it.
+ *
+ * \param buf data to write to the file
+ * \param size number of bytes to write
+ * \param mode ignored, for compatibility with the actual fmemopen()
+ * \return the file handle (or NULL if an error occurred)
+ */
+HANDLE fmemopen(void *buf, size_t size, const char *mode);
+#endif
 
 #endif

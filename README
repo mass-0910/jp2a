@@ -81,8 +81,9 @@ anymore.
 Building
 --------
 
-If you want to compile from source, you need autotools and automake. You may
-need to specify the path to jpeglib. I usually just do
+`jp2a` can be compiled as usual: `./configure && make && make install`
+
+If you want to compile after cloning the git repo (i.e. generate the `configure` script yourself), you need autotools, automake and autoconf-archive. You may need to specify the path to jpeglib. I usually just do
 
     autoreconf -vi
     ./configure --with-jpeg-prefix=/usr/local \
@@ -90,7 +91,7 @@ need to specify the path to jpeglib. I usually just do
     make -j
 
 Before installing, you may want to check that jp2a works by running `src/jp2a`
-on some `.jpg` files. You can also use `make check`. When you're ready to install,
+on some `.jpg` and `.png` files. You can also use `make check`. When you're ready to install,
 
     make -j install
 
@@ -127,6 +128,24 @@ This will look for `curl-config` in $PATH, but you can specify it directly with
 Windows
 -------
 
+### Cross compiling
+
+You can cross compile.
+
+### WSL
+
+You can use the Windows Subsystem for Linux.
+
+### Compile with `configure`
+
+The `configure` script requires a Bourne shell, so you got to install one (e.g. Bash).
+The easiest way is to install [Cygwin](https://cygwin.com/). Make sure to install the used libraries (curl, jpeglib, libpng, ncurses) as well as gcc and make.
+Open Cygwin and proceed as usual: `./configure && make && make install`
+
+You can also "cross compile" with Cygwin so that you get a binary that does not depend on Cygwin.
+
+### Compile without `configure`
+
 You need a working jpeglib for Windows and set up include paths yourself.
 You will need to manually type out a `config.h` file. Example:
 
@@ -134,7 +153,7 @@ You will need to manually type out a `config.h` file. Example:
     NDEBUG
     _CONSOLE
     PACKAGE_STRING=\"jp2a x.x.x-win32\"
-    PACKAGE_BUGREPORT=\"csl@csl.name\"
+    PACKAGE_BUGREPORT=\"chris-r@posteo.net\"
     HAVE_STRING_H
     HAVE_STDLIB_H
     FEAT_CURL

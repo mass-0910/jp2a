@@ -4,7 +4,7 @@
 AC_PREREQ([2.69])
 AC_INIT([jp2a],[1.1.0],[chris-r@posteo.net], [jp2a], [https://github.com/Talinx/jp2a])
 DX_INIT_DOXYGEN([jp2a])
-AM_INIT_AUTOMAKE(dist-bzip2)
+AM_INIT_AUTOMAKE(dist-bzip2 dist-zip)
 AC_CONFIG_SRCDIR(src/jp2a.c)
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile src/Makefile])
@@ -139,10 +139,8 @@ AC_CHECK_HEADER_STDBOOL
 # Checks for library functions.
 AC_FUNC_FORK
 AC_TYPE_PID_T
-AC_FUNC_MALLOC
 AC_CHECK_FUNCS([memset atexit mbrlen memset setlocale strerror])
 
 AC_HEADER_ASSERT
 
-AC_FUNC_MALLOC
 AC_OUTPUT

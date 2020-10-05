@@ -193,7 +193,7 @@ int escape_title() {
 		}
 		j += sizeNew;
 	}
-	if ( reallocarray(html_title, j+1, sizeof(char))==NULL )
+	if ( realloc(html_title, (j+1) * sizeof(char))==NULL )
 		return 0;
 	return 1;
 }

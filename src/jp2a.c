@@ -11,6 +11,7 @@
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <locale.h>
 
 #ifdef HAVE_STRING_H
@@ -23,10 +24,9 @@
 #include "curl.h"
 
 #ifdef WIN32
-#ifdef FEAT_CURL
+#include <windows.h>
 #include <io.h>
 #define close _close
-#endif
 #include <fcntl.h>
 #endif
 
@@ -93,11 +93,21 @@ int main(int argc, char** argv) {
 
 			size_t actual_size = 0;
 			if ( read_into_buffer(stdin, &buffer, &buffer_size, &actual_size) ) {
+#ifndef _WIN32
 				FILE *buffer_f = fmemopen(buffer, actual_size, "rb");
+#else
+				HANDLE handle = fmemopen(buffer, actual_size, "rb");
+				FILE *buffer_f = NULL;
+				if ( handle != NULL )
+					buffer_f = _fdopen(_open_osfhandle(handle, _O_RDONLY), "rb");
+#endif
 				if ( buffer_f != NULL ) {
 					decompress_jpeg(buffer_f, fout, &errors);
 					fclose(buffer_f);
 				}
+#ifdef _WIN32
+				CloseHandle(handle);
+#endif
 			}
 
 			if ( errors.jpeg_status && errors.png_status )
@@ -120,7 +130,14 @@ int main(int argc, char** argv) {
 
 			size_t actual_size = 0;
 			if ( read_into_buffer(fr, &buffer, &buffer_size, &actual_size) ) {
+#ifndef _WIN32
 				FILE *buffer_f = fmemopen(buffer, actual_size, "rb");
+#else
+				HANDLE handle = fmemopen(buffer, actual_size, "rb");
+				FILE *buffer_f = NULL;
+				if ( handle != NULL )
+					buffer_f = _fdopen(_open_osfhandle(handle, _O_RDONLY), "rb");
+#endif
 				if ( buffer_f != NULL ) {
 					int urllen = strlen(argv[n]);
 					if ( urllen > 4 && strcmp(".png", argv[n] + (urllen - 4)) == 0 )
@@ -129,6 +146,9 @@ int main(int argc, char** argv) {
 						decompress_jpeg(buffer_f, fout, &errors);
 					fclose(buffer_f);
 				}
+#ifdef _WIN32
+				CloseHandle(handle);
+#endif
 			}
 			fclose(fr);
 			close(fd);
@@ -206,3 +226,25 @@ int read_into_buffer(FILE *fp, char **buffer, size_t *buffer_size, size_t *actua
 		fprintf(stderr, "Size: %ld\n", *actual_size);
 	return 1;
 }
+
+#ifdef _WIN32
+HANDLE fmemopen(void *buf, size_t size, const char *mode) {
+	TCHAR temp_path[1024];
+	DWORD temp_path_len = GetTempPathA(1024, temp_path);
+	if ( temp_path_len == 0 || temp_path_len > 1024 )
+		return NULL;
+	TCHAR temp_file_name[MAX_PATH];
+	UINT unique = GetTempFileNameA(temp_path, "jp2a", 0, temp_file_name);
+	if ( unique == 0 )
+		return NULL;
+	HANDLE outputf = CreateFileA(temp_file_name, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	DWORD bytes_written = 0;
+	BOOL written = WriteFile(outputf, buf, size, &bytes_written, NULL);
+	if ( written == FALSE )
+		return NULL;
+	DWORD retval = SetFilePointer(outputf, 0, NULL, FILE_BEGIN);
+	if ( retval == INVALID_SET_FILE_POINTER )
+		return NULL;
+	return outputf;
+}
+#endif

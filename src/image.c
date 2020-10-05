@@ -8,7 +8,6 @@
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
-#undef HAVE_STDLIB_H
 #endif
 
 #include <stdio.h>
