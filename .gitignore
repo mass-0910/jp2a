@@ -16,3 +16,5 @@ missing
 src/.deps
 src/jp2a
 stamp-h1
+Doxyfile
+doxygen-doc/
