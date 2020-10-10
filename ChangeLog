@@ -1,4 +1,4 @@
-CHANGES SINCE 1.10.0
+CHANGES SINCE 1.1.0
 - support for PNG images
 - support for HTML (Living Standard) additionally to XHTML
 - (optional) support for other character encodings than ASCII
