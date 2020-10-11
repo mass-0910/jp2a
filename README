@@ -95,13 +95,6 @@ on some `.jpg` and `.png` files. You can also use `make check`. When you're read
 
     make -j install
 
-jp2a depends on jpeglib. In case configure fails beacuse jpeglib is not installed,
-it can be built and installed manually. Independent JPEG Group provides a UNIX format
-package in tar.gz format which can be downloaded from https://www.ijg.org/.
-
-jp2a uses libpng for reading PNG images. libpng is available at
-http://libpng.org/pub/png/libpng.html
-
 Extract the archive and follow the instructions inside 'install.txt' to build and
 install it. For a default install, the corresponding `.so` (shared object) files
 will be present in `/usr/local/lib/`
@@ -124,6 +117,23 @@ from the net:
 
 This will look for `curl-config` in $PATH, but you can specify it directly with
 `--with-curl-config=PATH` if you need to.
+
+### Runtime dependencies
+- [jpeglib](https://www.ijg.org/) or [libjpeg-turbo](https://libjpeg-turbo.org/)
+- [libpng](http://libpng.org/pub/png/libpng.html)
+- [curl](https://curl.haxx.se/) (optional)
+- [ncurses](https://invisible-island.net/ncurses/ncurses.html) (optional)
+
+### Build dependencies
+- make (e.g. [GNU Make](https://www.gnu.org/software/make/))
+- a C compiler like [gcc](https://gcc.gnu.org/)
+
+If you generate the `configure` script yourself (i.e. run `autoreconf`) you also need these:
+
+- autotools
+- [automake](https://www.gnu.org/software/automake/)
+- [autoconf](https://www.gnu.org/software/autoconf/autoconf.html)
+- [autoconf-archive](https://www.gnu.org/software/autoconf-archive/)
 
 Windows
 -------
