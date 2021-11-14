@@ -154,5 +154,7 @@ test_jp2a "PNG colormap standard input" "2>/dev/null ; cat jp2a-colormap.png | $
 test_jp2a "PNG interlaced 16-bit" "--size=300x150 --color jp2a-interlaced-16-bit.png" jp2a-png-interlaced-16-bit.txt
 test_jp2a "size, curl download" "--size=454x207 http://jp2a.sourceforge.net/jp2a.jpg" normal-curl.txt
 test_jp2a "size, curl download" "--size=454x207 http://jp2a.sf.net/jp2a.jpg" normal-curl.txt
+test_jp2a "very long jpg" "long.jpg" no-output.txt
+test_jp2a "very long png" "long.png" no-output.txt
 
 test_results
