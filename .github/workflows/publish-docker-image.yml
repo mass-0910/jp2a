@@ -3,9 +3,9 @@ name: Publish Docker image on Docker Hub
 on:
   release:
     types: [published]
-  push:
-    branches:
-      - 'master'
+  schedule:
+    - cron:  '21 12 21 * 0'
+  on: workflow_dispatch
 
 jobs:
   push_to_registry:
@@ -35,6 +35,12 @@ jobs:
         uses: docker/metadata-action@v3
         with:
           images: talinx/jp2a
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=schedule,pattern=nightly
+          flavor: |
+            latest=true
 
       - name: Build and push
         uses: docker/build-push-action@v2
