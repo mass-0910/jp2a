@@ -693,24 +693,26 @@ void decompress_jpeg(FILE *fp, FILE *fout, error_collector *errors) {
 
 	aspect_ratio(jpg.output_width, jpg.output_height);
 
-	malloc_image(&image);
-	clear(&image);
-
 	if ( verbose ) print_info_jpeg(&jpg);
 
-	init_image(&image, jpg.output_width, jpg.output_height);
+	if ( height != 0 && width != 0 ) {
+		malloc_image(&image);
+		clear(&image);
 
-	while ( jpg.output_scanline < jpg.output_height ) {
-		jpeg_read_scanlines(&jpg, buffer, 1);
-		process_scanline_jpeg(&jpg, buffer[0], &image);
-		if ( verbose ) print_progress((float) (jpg.output_scanline + 1.0f) / (float) jpg.output_height);
+		init_image(&image, jpg.output_width, jpg.output_height);
+
+		while ( jpg.output_scanline < jpg.output_height ) {
+			jpeg_read_scanlines(&jpg, buffer, 1);
+			process_scanline_jpeg(&jpg, buffer[0], &image);
+			if ( verbose ) print_progress((float) (jpg.output_scanline + 1.0f) / (float) jpg.output_height);
+		}
+
+		print_image(&image, fout);
+
+		free_image(&image);
+		jpeg_finish_decompress(&jpg);
 	}
 
-	print_image(&image, fout);
-
-	free_image(&image);
-
-	jpeg_finish_decompress(&jpg);
 	jpeg_destroy_decompress(&jpg);
 }
 
@@ -757,72 +759,75 @@ void decompress_png(FILE *fp, FILE *fout, error_collector *errors) {
 	png_set_sig_bytes(png_ptr, number_bytes_to_check);
 	png_read_info(png_ptr, info_ptr);
 
-	int width = png_get_image_width(png_ptr, info_ptr);
-	int height = png_get_image_height(png_ptr, info_ptr);
+	int png_width = png_get_image_width(png_ptr, info_ptr);
+	int png_height = png_get_image_height(png_ptr, info_ptr);
 
-	aspect_ratio(width, height);
-
-	malloc_image(&image);
-	clear(&image);
+	aspect_ratio(png_width, png_height);
 
 	if ( verbose ) print_info_png(png_ptr, info_ptr);
 
-	// peform transformations (after printing the info):
-	if ( png_get_color_type(png_ptr, info_ptr) == PNG_COLOR_TYPE_PALETTE )
-		png_set_palette_to_rgb(png_ptr);
-	if ( png_get_bit_depth(png_ptr, info_ptr) < 8 ) {
-		if ( png_get_channels(png_ptr, info_ptr) < 3 ) {
-			png_set_expand_gray_1_2_4_to_8(png_ptr);
+	if ( height != 0 && width != 0 ) {
+		malloc_image(&image);
+		clear(&image);
+
+
+		// peform transformations (after printing the info):
+		if ( png_get_color_type(png_ptr, info_ptr) == PNG_COLOR_TYPE_PALETTE )
+			png_set_palette_to_rgb(png_ptr);
+		if ( png_get_bit_depth(png_ptr, info_ptr) < 8 ) {
+			if ( png_get_channels(png_ptr, info_ptr) < 3 ) {
+				png_set_expand_gray_1_2_4_to_8(png_ptr);
+			} else {
+				png_set_expand(png_ptr);
+			}
+		}
+		if ( png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS) )
+			png_set_tRNS_to_alpha(png_ptr);
+		if ( png_get_bit_depth(png_ptr, info_ptr) == 16 )
+			png_set_strip_16(png_ptr);
+		int number_of_passes = png_set_interlace_handling(png_ptr);
+		png_read_update_info(png_ptr, info_ptr);
+
+		init_image(&image, png_width, png_height);
+
+		if ( verbose )
+			print_progress(0.0);
+		if ( png_get_interlace_type(png_ptr, info_ptr) == PNG_INTERLACE_NONE ) {
+			png_bytep row_pointer = png_malloc(png_ptr, png_width * png_get_channels(png_ptr, info_ptr) * 1);
+			for ( int y = 0; y < png_height; y++ ) {
+				png_read_row(png_ptr, row_pointer, NULL);
+				process_scanline_png(row_pointer, y, png_get_channels(png_ptr, info_ptr), &image);
+				if ( verbose )
+					print_progress((float) y/png_height);
+			}
+			png_free(png_ptr, row_pointer);
 		} else {
-			png_set_expand(png_ptr);
+			png_bytepp row_pointers = png_malloc(png_ptr, png_height * sizeof(png_bytep));
+			for ( int i = 0; i < png_height; ++i )
+				row_pointers[i] = NULL;
+			for ( int i = 0; i < png_height; ++i )
+				row_pointers[i] = png_malloc(png_ptr, png_width * png_get_channels(png_ptr, info_ptr) * 1);
+			// png_read_image would do the same thing, but progress could not be displayed
+			for ( int passes = 0; passes < number_of_passes; ++passes ) {
+				png_read_rows(png_ptr, row_pointers, NULL, png_height);
+				if ( verbose )
+					print_progress((float) (passes + 1)/number_of_passes);
+			}
+			for ( int y = 0; y < png_height; y++ ) {
+				process_scanline_png(row_pointers[y], y, png_get_channels(png_ptr, info_ptr), &image);
+			}
+			for ( int i = 0; i < png_height; ++i )
+				png_free(png_ptr, row_pointers[i]);
+			png_free(png_ptr, row_pointers);
 		}
+		if ( verbose )
+			print_progress(1.0);
+		png_read_end(png_ptr, NULL);
+
+		print_image(&image, fout);
+
+		free_image(&image);
 	}
-	if ( png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS) )
-		png_set_tRNS_to_alpha(png_ptr);
-	if ( png_get_bit_depth(png_ptr, info_ptr) == 16 )
-		png_set_strip_16(png_ptr);
-	int number_of_passes = png_set_interlace_handling(png_ptr);
-	png_read_update_info(png_ptr, info_ptr);
-
-	init_image(&image, width, height);
-
-	if ( verbose )
-		print_progress(0.0);
-	if ( png_get_interlace_type(png_ptr, info_ptr) == PNG_INTERLACE_NONE ) {
-		png_bytep row_pointer = png_malloc(png_ptr, width * png_get_channels(png_ptr, info_ptr) * 1);
-		for ( int y = 0; y < height; y++ ) {
-			png_read_row(png_ptr, row_pointer, NULL);
-			process_scanline_png(row_pointer, y, png_get_channels(png_ptr, info_ptr), &image);
-			if ( verbose )
-				print_progress((float) y/height);
-		}
-		png_free(png_ptr, row_pointer);
-	} else {
-		png_bytepp row_pointers = png_malloc(png_ptr, height * sizeof(png_bytep));
-		for ( int i = 0; i < height; ++i )
-			row_pointers[i] = NULL;
-		for ( int i = 0; i < height; ++i )
-			row_pointers[i] = png_malloc(png_ptr, width * png_get_channels(png_ptr, info_ptr) * 1);
-		// png_read_image would do the same thing, but progress could not be displayed
-		for ( int passes = 0; passes < number_of_passes; ++passes ) {
-			png_read_rows(png_ptr, row_pointers, NULL, height);
-			if ( verbose )
-				print_progress((float) (passes + 1)/number_of_passes);
-		}
-		for ( int y = 0; y < height; y++ ) {
-			process_scanline_png(row_pointers[y], y, png_get_channels(png_ptr, info_ptr), &image);
-		}
-		for ( int i = 0; i < height; ++i )
-			png_free(png_ptr, row_pointers[i]);
-		png_free(png_ptr, row_pointers);
-	}
-	if ( verbose )
-		print_progress(1.0);
-	png_read_end(png_ptr, NULL);
-
-	print_image(&image, fout);
-
-	free_image(&image);
 
 	png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
 }
