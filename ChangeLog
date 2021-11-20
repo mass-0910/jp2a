@@ -1,3 +1,6 @@
+CHANGES SINCE 1.1.1
+- Fix images with very high aspect ratio, e.g. 3000:1
+
 CHANGES SINCE 1.1.0
 - support for PNG images
 - support for HTML (Living Standard) additionally to XHTML
