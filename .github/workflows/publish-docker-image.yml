@@ -5,7 +5,7 @@ on:
     types: [published]
   schedule:
     - cron:  '21 12 21 * 0'
-  on: workflow_dispatch
+  workflow_dispatch:
 
 jobs:
   push_to_registry:
