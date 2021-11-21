@@ -78,6 +78,15 @@ Installation
 Look in your system's package manager. I don't maintain Windows binaries
 anymore.
 
+Docker
+------
+
+You can run jp2a using [Docker](https://www.docker.com/):
+```
+docker run -t --rm -e COLORTERM="$COLORTERM" -v "$(pwd)":/app talinx/jp2a [options] <filenames or URLs>
+```
+See [hub.docker.com/r/talinx/jp2a](https://hub.docker.com/r/talinx/jp2a) for details.
+
 Building
 --------
 
