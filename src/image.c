@@ -129,7 +129,7 @@ void print_image_colors(const Image* const image, const int chars, FILE* f) {
 
 			if ( !html && !xhtml ) {
 				if ( usecolors ) // reset colors, the terminal could be colored by default
-					fprintf(f, "\e[0m"); // reset colors
+					fprintf(f, "\x1b[0m"); // reset colors
 				if ( colorDepth==4 ) {
 					const float t = 0.1f; // threshold
 					const float i = 1.0f - t;
@@ -154,10 +154,10 @@ void print_image_colors(const Image* const image, const int chars, FILE* f) {
 
 					if ( !colr ) {
 						if ( !highl ) fprintf(f, PRINTF_FORMAT_TYPE, ch);
-						else          fprintf(f, "\e[1m" PRINTF_FORMAT_TYPE "\e[0m", ch);
+						else          fprintf(f, "\x1b[1m" PRINTF_FORMAT_TYPE "\x1b[0m", ch);
 					} else {
 						if ( colorfill ) colr += 10;          // set to ANSI background color
-						fprintf(f, "\e[%dm" PRINTF_FORMAT_TYPE, colr, ch); // ANSI color
+						fprintf(f, "\x1b[%dm" PRINTF_FORMAT_TYPE, colr, ch); // ANSI color
 					}
 				} else
 				if ( colorDepth==8 ) {
@@ -166,22 +166,22 @@ void print_image_colors(const Image* const image, const int chars, FILE* f) {
 					if ( convert_grayscale || (R<min && G<min && B<min && Y>min) ) {
 						if ( Y < 0.15 ) {
 							if ( colorfill )
-								fprintf(f, "\e[38;5;%dm", 0);
-							fprintf(f, "\e[%d;5;0%dm" PRINTF_FORMAT_TYPE, type, 0, ch);
+								fprintf(f, "\x1b[38;5;%dm", 0);
+							fprintf(f, "\x1b[%d;5;0%dm" PRINTF_FORMAT_TYPE, type, 0, ch);
 						} else
 						if ( Y > 0.965 ) {
 							if ( colorfill )
-								fprintf(f, "\e[38;5;%dm", 244);
-							fprintf(f, "\e[%d;5;%dm" PRINTF_FORMAT_TYPE, type, 231, ch);
+								fprintf(f, "\x1b[38;5;%dm", 244);
+							fprintf(f, "\x1b[%d;5;%dm" PRINTF_FORMAT_TYPE, type, 231, ch);
 						} else {
 							if ( colorfill )
-								fprintf(f, "\e[38;5;%dm", ROUND(24.0f*Y*0.5f) + 232);
-							fprintf(f, "\e[%d;5;%dm" PRINTF_FORMAT_TYPE, type, ROUND(24.0f*Y) + 232, ch);
+								fprintf(f, "\x1b[38;5;%dm", ROUND(24.0f*Y*0.5f) + 232);
+							fprintf(f, "\x1b[%d;5;%dm" PRINTF_FORMAT_TYPE, type, ROUND(24.0f*Y) + 232, ch);
 						}
 					} else {
 						if ( colorfill )
-							fprintf(f, "\e[38;5;%dm", 16 + 36 * ROUND(5.0f*Y*R) + 6 * ROUND(5.0f*Y*G) + ROUND(5.0f*Y*B)); // foreground color
-						fprintf(f, "\e[%d;5;%dm" PRINTF_FORMAT_TYPE, type, 16 + 36 * ROUND(5.0f*R) + 6 * ROUND(5.0f*G) + ROUND(5.0f*B), ch); // color
+							fprintf(f, "\x1b[38;5;%dm", 16 + 36 * ROUND(5.0f*Y*R) + 6 * ROUND(5.0f*Y*G) + ROUND(5.0f*Y*B)); // foreground color
+						fprintf(f, "\x1b[%d;5;%dm" PRINTF_FORMAT_TYPE, type, 16 + 36 * ROUND(5.0f*R) + 6 * ROUND(5.0f*G) + ROUND(5.0f*B), ch); // color
 					}
 				} else
 				if ( colorDepth==24 ) {
@@ -200,9 +200,9 @@ void print_image_colors(const Image* const image, const int chars, FILE* f) {
 
 			} else
 			if ( html ) {  // HTML output
-			
+
 				// either --grayscale is specified (convert_grayscale)
-				// or we can see that the image is inherently a grayscale image	
+				// or we can see that the image is inherently a grayscale image
 				if ( convert_grayscale || (R<min && G<min && B<min && Y>min) ) {
 					// Grayscale image
 					if ( colorfill )
@@ -223,11 +223,11 @@ void print_image_colors(const Image* const image, const int chars, FILE* f) {
 							ROUND(255.0f*R), ROUND(255.0f*G), ROUND(255.0f*B),
 							255, 255, 255);
 				}
-			} else 
+			} else
 			if ( xhtml ) {  // XHTML output
-			
+
 				// either --grayscale is specified (convert_grayscale)
-				// or we can see that the image is inherently a grayscale image	
+				// or we can see that the image is inherently a grayscale image
 				if ( convert_grayscale || (R<min && G<min && B<min && Y>min) ) {
 					// Grayscale image
 					if ( colorfill )
@@ -252,7 +252,7 @@ void print_image_colors(const Image* const image, const int chars, FILE* f) {
 		}
 
 		if ( usecolors && !html && !xhtml )
-			fprintf(f, "\e[0m");
+			fprintf(f, "\x1b[0m");
 
 		if ( use_border )
 			fputc('|', f);
@@ -728,7 +728,7 @@ void decompress_png(FILE *fp, FILE *fout, error_collector *errors) {
 	}
 	Image image;
 	int number_bytes_to_check = 8;
-	char header[number_bytes_to_check];
+	char header[8];
 	if ( fread(&header, 1, number_bytes_to_check, fp) != number_bytes_to_check || png_sig_cmp(header, 0, number_bytes_to_check) ) {
 		errors->png_error_msg = "Not a PNG file: Wrong signature";
 		errors->png_status = 1;

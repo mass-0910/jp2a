@@ -30,7 +30,7 @@
 #include <fcntl.h>
 #endif
 
-int main(int argc, char** argv) {
+int jp2a_main(int argc, char** argv) {
 	int store_width, store_height, store_autow, store_autoh;
 	FILE *fout = stdout;
 	// FILEs from downloads and pipes are not seekable.
@@ -152,7 +152,7 @@ int main(int argc, char** argv) {
 			}
 			fclose(fr);
 			close(fd);
-			
+
 			if ( errors.jpeg_status && errors.png_status )
 				retval = 1;
 			continue;

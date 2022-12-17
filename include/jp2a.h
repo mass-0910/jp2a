@@ -22,7 +22,11 @@
  * \param argc argument count
  * \param argv the arguments
  */
-int main(int argc, char** argv);
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+int jp2a_main(int argc, char **argv);
 
 /*!
  * \brief Reads from a stream into a buffer.
@@ -54,5 +58,9 @@ int read_into_buffer(FILE *fp, char **buffer, size_t *buffer_size, size_t *actua
  */
 HANDLE fmemopen(void *buf, size_t size, const char *mode);
 #endif
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif
