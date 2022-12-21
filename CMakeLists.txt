@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.12)
+
 set(jp2a_source
     src/aspect_ratio.c
     src/curl.c
