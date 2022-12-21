@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.12)
 
 project(jp2a
     VERSION 1.1.1
+    DESCRIPTION "Converts jpg/png images to ASCII"
+    LANGUAGES C
 )
 
 set(jp2a_source
