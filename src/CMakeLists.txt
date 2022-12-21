@@ -1,4 +1,6 @@
-set(jp2a_source
+add_library(jp2a STATIC)
+
+target_sources(jp2a PRIVATE
     aspect_ratio.c
     curl.c
     html.c
@@ -7,8 +9,6 @@ set(jp2a_source
     options.c
     terminal.c
 )
-
-add_library(jp2a STATIC ${jp2a_source})
 
 target_include_directories(jp2a PUBLIC include ${CMAKE_BINARY_DIR})
 target_compile_definitions(jp2a PUBLIC
