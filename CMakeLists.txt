@@ -34,6 +34,9 @@ target_compile_definitions(jp2a PUBLIC
 )
 
 find_package(JPEG REQUIRED)
+target_include_directories(jp2a PUBLIC ${JPEG_INCLUDE_DIR})
 target_link_libraries(jp2a ${JPEG_LIBRARIES})
+
 find_package(PNG REQUIRED)
+target_include_directories(jp2a PUBLIC ${PNG_INCLUDE_DIR})
 target_link_libraries(jp2a ${PNG_LIBRARIES})
