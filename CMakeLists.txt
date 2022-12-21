@@ -1,3 +1,9 @@
+cmake_minimum_required(VERSION 3.12)
+
+project(jp2a
+    VERSION 1.1.1
+)
+
 set(jp2a_source
     src/aspect_ratio.c
     src/curl.c
@@ -28,6 +34,9 @@ target_compile_definitions(jp2a PUBLIC
 )
 
 find_package(JPEG REQUIRED)
+target_include_directories(jp2a PUBLIC ${JPEG_INCLUDE_DIR})
 target_link_libraries(jp2a ${JPEG_LIBRARIES})
+
 find_package(PNG REQUIRED)
+target_include_directories(jp2a PUBLIC ${PNG_INCLUDE_DIR})
 target_link_libraries(jp2a ${PNG_LIBRARIES})
