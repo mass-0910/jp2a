@@ -10,7 +10,18 @@ target_sources(jp2a PRIVATE
     terminal.c
 )
 
-target_include_directories(jp2a PUBLIC include ${CMAKE_BINARY_DIR})
+target_include_directories(jp2a PUBLIC
+    ${PROJECT_SOURCE_DIR}/include
+    ${CMAKE_BINARY_DIR} # for config.h
+    ${JPEG_INCLUDE_DIR}
+    ${PNG_INCLUDE_DIR}
+)
+
+target_link_libraries(jp2a
+    ${JPEG_LIBRARIES}
+    ${PNG_LIBRARIES}
+)
+
 target_compile_definitions(jp2a PUBLIC
     ${WIN32_MACROS}
     NDEBUG
@@ -21,9 +32,3 @@ target_compile_definitions(jp2a PUBLIC
     HAVE_STRING_H
     HAVE_STDLIB_H
 )
-
-target_include_directories(jp2a PUBLIC ${JPEG_INCLUDE_DIR})
-target_link_libraries(jp2a ${JPEG_LIBRARIES})
-
-target_include_directories(jp2a PUBLIC ${PNG_INCLUDE_DIR})
-target_link_libraries(jp2a ${PNG_LIBRARIES})
